@@ -9,3 +9,49 @@
 [hidden]{display:none!important}
 .fish-thumbnail{object-fit:contain;color:#98b7b3;font-size:11px}.fish-thumbnail:not([src]){visibility:hidden}.backup-controls{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.backup-controls button{font-size:12px;padding:8px}.app-status{padding:12px 18px;background:#403322;color:#f5dfb6;border-radius:8px;line-height:1.5}.fish-info{flex-wrap:wrap}
 .card-info,.fish-card,.roster{min-width:0}.card-info strong{max-width:100%}
+/* Room landing scene; all controls remain keyboard-accessible. */
+#room{position:relative;height:100svh;min-height:560px;overflow:hidden;background:#30281f;color:#f6ead4}
+#room-stage{position:absolute;inset:0}#room-stage #main-fish{display:block;width:100%;height:100%;touch-action:none}
+.room-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#161710a8,transparent 27%,transparent 74%,#17140ebf)}
+.room-header{position:absolute;left:4%;right:4%;top:28px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.room-header>*{pointer-events:auto}.room-brand{display:flex;gap:12px;align-items:center;color:#efcd91;font-size:29px}.room-brand span{font-size:13px;letter-spacing:.2em}.room-brand small{display:block;font-size:9px;letter-spacing:.18em;margin-top:7px;color:#c0b79d}
+.room-button,.room-pan button{background:#252b22a8;color:#f0dfbd;border:1px solid #c4ad7866;border-radius:25px;padding:12px 20px;font-size:12px;backdrop-filter:blur(10px)}
+.room-intro{position:absolute;top:105px;left:4%;pointer-events:none}.room-eyebrow{font-size:9px;letter-spacing:.24em;color:#d7c19c}.room-intro h1{font:400 clamp(27px,3.2vw,47px)/1.15 Georgia,serif;margin:12px 0}.room-intro p{font-size:12px;color:#dacfb9;max-width:440px;line-height:1.6;margin:0}
+#tank-labels{position:absolute;inset:0;pointer-events:none}.tank-label{position:absolute;pointer-events:auto;transform:translate(-50%,-50%);background:#29261de8;border:1px solid #ac8b5366;color:#f6e1b4;border-radius:4px;padding:5px 9px;font-size:10px;letter-spacing:.055em;white-space:nowrap;box-shadow:0 3px 12px #0005;transition:background .15s,border-color .15s}.tank-label:hover,.tank-label:focus-visible{background:#5a482e;border-color:#f4cd87;outline:2px solid #e3bc7377;outline-offset:3px}.tank-label small{display:block;font-size:8px;letter-spacing:0;color:#adbfad;margin-top:3px}.tank-label:disabled{opacity:.6}
+.room-bottom{position:absolute;left:4%;right:4%;bottom:25px;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px;color:#eee0c4;pointer-events:none}.room-bottom small{display:block;margin-top:8px;font-size:10px;color:#b7b69e}.room-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#9fb883;margin-right:8px;box-shadow:0 0 8px #94b576}.room-pan{display:flex;gap:8px;pointer-events:auto}.room-pan button{padding:10px 16px;font-size:18px}
+#room-progress{position:absolute;right:4%;top:85px;font-size:11px;color:#e8cfa3}#laboratory .top-right{gap:12px}#back-room{font-size:12px;padding:8px 12px}
+@media(max-width:720px){.room-header{top:20px}.room-brand{font-size:22px}.room-brand span{font-size:11px}.room-button{padding:10px 12px;font-size:10px}.room-intro{top:90px}.room-intro h1{font-size:29px}.room-intro p{max-width:275px;font-size:11px}.room-eyebrow{font-size:8px}.room-bottom{bottom:20px}.room-bottom small{max-width:230px;line-height:1.5}.tank-label{font-size:10px}#room-progress{top:auto;bottom:90px}.room-pan button{padding:8px 12px}#laboratory .brand small{display:none}#laboratory .top{padding:0 12px}#laboratory .season{font-size:9px}}
+/* Keep room controls above the shared WebGL canvas. */
+#room-stage{z-index:0}
+.room-shade{z-index:1}
+#tank-labels{z-index:2}
+.room-header,.room-intro,.room-bottom,#room-progress{z-index:3}
+/* A quieter laboratory, with the breeding cycle and collection easy to scan. */
+.lab-overview{padding:28px 32px;background:linear-gradient(110deg,#173b3d,#102932);display:flex;align-items:center;justify-content:space-between;gap:28px;border-bottom:1px solid #54706b55}
+.lab-overview h2{font:400 30px/1.2 Georgia,serif;margin:10px 0;color:#f0e6cf}
+.lab-overview p{max-width:620px;font-size:13px;line-height:1.5;color:#abc7be;margin:0}
+.lab-stats{display:flex;gap:28px;flex-shrink:0}.lab-stats div{display:flex;flex-direction:column;gap:7px}.lab-stats strong{font:32px Georgia,serif;color:#e9cc92}.lab-stats span{font-size:11px;color:#a6bfb4}
+.lab-nav{display:flex;gap:8px;padding:12px 32px;border-bottom:1px solid #ffffff18}.lab-nav a{color:#c3d7ce;font-size:12px;text-decoration:none;padding:8px 14px;background:#18373d;border-radius:20px}.lab-nav a:hover{background:#2a4b4b}
+.workspace{grid-template-columns:290px minmax(0,1fr) 350px}.panel{padding:26px 20px}.stage{padding:26px}
+.breeding h1{font-size:36px;margin:18px 0}.intro{font-size:13px}.parent-slots{margin-top:24px}
+.slot{background:linear-gradient(135deg,#16363b,#102c34);border-color:#48645e;border-radius:13px}
+.slot-heading{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.1em;color:#ddc494}
+.slot-heading button{font-size:10px}.parent-preview{width:74px;height:48px;object-fit:contain;float:left;margin:0 9px 4px 0}
+.slot-content{font-size:13px;min-height:52px}.slot-content strong{display:block;font-weight:500;padding-top:5px}.slot-content small{font-size:11px;line-height:1.4}
+.rule-note{font-size:11px;line-height:1.5;color:#849f9c}.hint.ready{color:#b9d897}.cross{font-size:22px;line-height:28px}
+.hero-fish{height:clamp(330px,32vw,490px);border-radius:20px}.fish-info h2{font-size:28px}.fish-info>div{width:100%}
+.genome{padding:16px;background:#102a32;border:1px solid #37554f;border-radius:10px}.genome>summary,.backup-menu>summary{cursor:pointer;font-size:13px;color:#d6c399}.genome-content{padding-top:20px}
+.backup-menu{margin-bottom:18px}.backup-controls{margin:12px 0 0}.collection-note{font-size:12px;margin:16px 0}
+.roster-tools label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:#b4cbbf}
+.roster-tools input,.roster-tools select{width:100%;min-width:0;box-sizing:border-box;padding:10px 9px;border:1px solid #48645e;border-radius:8px;background:#102d34;color:#e9efdf;font:12px Arial,sans-serif}
+.roster-tools input:focus-visible{outline:2px solid #e3bd7e;outline-offset:2px}.roster-selects{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.roster{max-height:740px}.fish-card{border-color:#34554f;background:#112f35;border-radius:12px}.fish-card.active{background:#203d3c}.pick{padding:8px}.empty-state{padding:24px 12px;border:1px dashed #48645e;border-radius:12px;color:#abc7bc;font-size:13px;text-align:center}.empty-state button{display:block;margin:15px auto 0}
+#app-status{margin:12px 24px;border:1px solid #a48a5466}.collection,.breeding{background:#0b242c}
+@media(max-width:1150px){.workspace{grid-template-columns:280px minmax(0,1fr)}.collection{grid-column:1/-1}.roster{max-height:none}.roster-tools{max-width:600px}.lab-stats{gap:16px}.lab-overview{gap:20px}}
+@media(max-width:720px){.lab-overview{padding:22px 16px;display:block}.lab-overview h2{font-size:26px}.lab-stats{margin-top:22px;justify-content:space-between}.lab-stats strong{font-size:27px}.lab-stats span{font-size:10px}.lab-nav{padding:10px 16px}.workspace{display:flex}.stage{padding:20px 16px}.hero-fish{height:310px}.fish-info{flex-direction:row;gap:10px}.fish-info .secondary{font-size:12px;padding:10px}.panel{padding:24px 16px}.lab-overview p{font-size:12px}#app-status{margin:12px 16px}}
+.fish-card.incompatible{background:#1b292b;border-color:#394746}
+.fish-card.incompatible .fish-thumbnail{filter:grayscale(1);opacity:.48}
+.fish-card.incompatible .card-info>strong,.fish-card.incompatible .card-info>small:not(.pair-reason){color:#91a09c}
+.pair-reason{color:#c1b296!important;font-size:10px!important;line-height:1.4}
+.fish-card.incompatible .pick:disabled{opacity:.65}.color-audit{font-size:12px;line-height:1.65;padding:15px;border:1px solid #46615d;border-radius:9px;margin:16px 0}
+.color-audit summary{cursor:pointer;color:#e5c68d}.color-audit table{width:100%;border-collapse:collapse;font-size:11px}.color-audit th,.color-audit td{text-align:left;vertical-align:top;padding:8px;border-bottom:1px solid #ffffff20}.color-audit a{color:#e5c68d}

@@ -33,8 +33,9 @@ window.BettaAppearance = (() => {
   }
   function describe(fish) {
     if(!BettaSpecies.ornamental(fish)) return BettaSpecies.description(fish);
-    const p=params(fish),parts=[['steel blue','royal blue','turchese'][p.blue]];
-    if(p.black) parts.unshift('super black');
+    const p=params(fish),parts=[];
+    if(p.black<.9&&p.red<.9&&p.copper<.9)parts.push(['steel blue','royal blue','turchese'][p.blue]);
+    if(p.black) parts.unshift('nero (linea non determinata)');
     for(const [key,label] of [['red','rosso'],['marble','marble'],['butterfly','butterfly'],['copper','rame'],['dragon','dragon'],['yellow','pinne gialle']]) {
       if(p[key]) parts.push(label);
     }
@@ -42,4 +43,3 @@ window.BettaAppearance = (() => {
   }
   return {params,describe,key};
 })();
-

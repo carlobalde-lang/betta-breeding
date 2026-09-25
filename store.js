@@ -75,6 +75,25 @@ window.BettaStore = (() => {
     if (shared.length) return shared.length === 2 ? 'Parentela registrata: fratelli.' : 'Parentela registrata: un genitore in comune.';
     return 'Nessuna parentela diretta rilevata nei dati disponibili; non esclude antenati comuni.';
   }
+  // One readiness rule for both interface and direct actions.
+  function pairingStatus(state,a,b) {
+    if(!a||!b)return {allowed:false,reason:'Scegli una femmina e un maschio adulti.'};
+    if(a.id===b.id)return {allowed:false,reason:'È lo stesso esemplare.'};
+    if(a.sex===b.sex)return {allowed:false,reason:'Stesso sesso.'};
+    const m=a.sex==='F'?a:b,d=a.sex==='M'?a:b;
+    const compatibility=window.BettaSpecies.compatibility(m,d);
+    if(!m||!d)return {allowed:false,reason:'Scegli una femmina e un maschio adulti.'};
+    if(m.sex!=='F'||d.sex!=='M'||m.id===d.id)return {allowed:false,reason:'Servono due genitori distinti: una femmina e un maschio.'};
+    if(m.age<2||d.age<2)return {allowed:false,reason:'I piccoli diventano riproduttori a 2 mesi nel gioco.'};
+    if(!compatibility.allowed)return {allowed:false,reason:compatibility.message};
+    if(state.fish.some(f=>f.age===0&&f.parents?.some(id=>id===m.id||id===d.id)))
+      return {allowed:false,reason:'Un genitore ha già una nidiata questo mese. Passa al mese successivo.',resting:true};
+    if(state.fish.length>2996)return {allowed:false,reason:'Spazio insufficiente: il limite è 3000 esemplari.'};
+    return {allowed:true,reason:compatibility.message};
+  }
+  function breedingStatus(state) {
+    return pairingStatus(state,state.fish.find(f=>f.id===state.mother),state.fish.find(f=>f.id===state.father));
+  }
   function create(storage) {
     let state, blocked = false, notice = '';
     const listeners = new Set();
@@ -98,6 +117,8 @@ window.BettaStore = (() => {
     return {
       getState: () => clone(state),
       getStatus: () => ({notice, blocked}),
+      breedingStatus: () => breedingStatus(state),
+      clearParent(sex) { if(['F','M'].includes(sex))commit({...state,[sex==='F'?'mother':'father']:null}); },
       subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
       export: () => JSON.stringify(state,null,2),
       original: () => storage.getItem(KEY),
@@ -107,6 +128,11 @@ window.BettaStore = (() => {
       },
       reset() { blocked = false; commit(founders()); },
       select(id) { if(state.fish.some(f=>f.id===id)) commit({...state,selected:id}); },
+      choosePair(femaleId,maleId) {
+        const mother=state.fish.find(f=>f.id===femaleId&&f.sex==='F'&&f.age>=2);
+        const father=state.fish.find(f=>f.id===maleId&&f.sex==='M'&&f.age>=2);
+        commit({...state,mother:mother?.id??null,father:father?.id??null,selected:mother?.id??father?.id??state.selected});
+      },
       pick(id) {
         const f=state.fish.find(f=>f.id===id);
         if(f && f.age>=2) commit({...state,selected:id,[f.sex==='F'?'mother':'father']:id});
@@ -119,7 +145,7 @@ window.BettaStore = (() => {
       },
       breed() {
         const [m,d]=parents();
-        if(!m||!d||m.id===d.id||m.age<2||d.age<2||!window.BettaSpecies.compatibility(m,d).allowed) return false;
+        if(!breedingStatus(state).allowed) return false;
         if(state.fish.length>2996) throw Error('Spazio insufficiente nella vasca.');
         const start=nextId();
         const batch=Array.from({length:4},(_,i)=>({
@@ -132,10 +158,11 @@ window.BettaStore = (() => {
       },
       advance() {
         const fish=state.fish.map(f=>({...f,age:f.age+1,phase:f.phase+(f.genes.M.includes('M')?.21+(f.seed%11)/80:0)}));
-        commit({...state,fish,month:state.month+1,log:['Mese '+(state.month+1)+': i pesci crescono.',...state.log].slice(0,5)});
+        const matured=state.fish.filter(f=>f.age===1).length;
+        commit({...state,fish,month:state.month+1,log:['Mese '+(state.month+1)+': '+(matured?matured+' giovani diventano adulti.':'i pesci crescono.'),...state.log].slice(0,5)});
+        return {matured,young:fish.filter(f=>f.age<2).length};
       }
     };
   }
-  return {VERSION,KEY,migrate,founders,relationship,create};
+  return {VERSION,KEY,migrate,founders,relationship,pairingStatus,breedingStatus,create};
 })();
-
