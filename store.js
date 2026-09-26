@@ -76,6 +76,22 @@ window.BettaStore = (() => {
     return 'Nessuna parentela diretta rilevata nei dati disponibili; non esclude antenati comuni.';
   }
   // One readiness rule for both interface and direct actions.
+  function parentStatus(state,fish) {
+    if(!fish)return {allowed:false,reason:'Scegli un esemplare.'};
+    if(fish.age<2)return {allowed:false,reason:'I piccoli diventano riproduttori a 2 mesi nel gioco.'};
+    const species=window.BettaSpecies.compatibility(fish,fish);
+    if(!species.allowed)return {allowed:false,reason:species.message};
+    if(state.fish.some(f=>f.age===0&&f.parents?.includes(fish.id)))
+      return {allowed:false,reason:'Un genitore ha già una nidiata questo mese. Passa al mese successivo.',resting:true};
+    if(state.fish.length>2996)return {allowed:false,reason:'Spazio insufficiente: il limite è 3000 esemplari.'};
+    return {allowed:true,reason:''};
+  }
+  function selectionStatus(state,fish) {
+    const own=parentStatus(state,fish);
+    if(!own.allowed)return own;
+    const opposite=state.fish.find(f=>f.id===state[fish.sex==='F'?'father':'mother']);
+    return opposite?pairingStatus(state,fish,opposite):own;
+  }
   function pairingStatus(state,a,b) {
     if(!a||!b)return {allowed:false,reason:'Scegli una femmina e un maschio adulti.'};
     if(a.id===b.id)return {allowed:false,reason:'È lo stesso esemplare.'};
@@ -84,11 +100,8 @@ window.BettaStore = (() => {
     const compatibility=window.BettaSpecies.compatibility(m,d);
     if(!m||!d)return {allowed:false,reason:'Scegli una femmina e un maschio adulti.'};
     if(m.sex!=='F'||d.sex!=='M'||m.id===d.id)return {allowed:false,reason:'Servono due genitori distinti: una femmina e un maschio.'};
-    if(m.age<2||d.age<2)return {allowed:false,reason:'I piccoli diventano riproduttori a 2 mesi nel gioco.'};
+    for(const parent of [m,d]){const status=parentStatus(state,parent);if(!status.allowed)return status;}
     if(!compatibility.allowed)return {allowed:false,reason:compatibility.message};
-    if(state.fish.some(f=>f.age===0&&f.parents?.some(id=>id===m.id||id===d.id)))
-      return {allowed:false,reason:'Un genitore ha già una nidiata questo mese. Passa al mese successivo.',resting:true};
-    if(state.fish.length>2996)return {allowed:false,reason:'Spazio insufficiente: il limite è 3000 esemplari.'};
     return {allowed:true,reason:compatibility.message};
   }
   function breedingStatus(state) {
@@ -135,7 +148,7 @@ window.BettaStore = (() => {
       },
       pick(id) {
         const f=state.fish.find(f=>f.id===id);
-        if(f && f.age>=2) commit({...state,selected:id,[f.sex==='F'?'mother':'father']:id});
+        if(selectionStatus(state,f).allowed) commit({...state,selected:id,[f.sex==='F'?'mother':'father']:id});
       },
       add(specimen) {
         if(state.fish.length>=3000) throw Error('Vasca piena: esporta una copia prima di iniziare un nuovo allevamento.');
@@ -164,5 +177,5 @@ window.BettaStore = (() => {
       }
     };
   }
-  return {VERSION,KEY,migrate,founders,relationship,pairingStatus,breedingStatus,create};
+  return {VERSION,KEY,migrate,founders,relationship,parentStatus,selectionStatus,pairingStatus,breedingStatus,create};
 })();

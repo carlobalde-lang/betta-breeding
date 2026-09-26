@@ -27,7 +27,6 @@ requestAnimationFrame(() => requestAnimationFrame(async () => {
     await loadScript('./store.js');
     await loadScript('./app.js');
     await loadScript('./types-ui.js');
-    await loadScript('./morph-ui.js');
     document.getElementById('loading-message').textContent = 'Preparazione del modello 3D…';
     await loadScript('./three-scene.js');
   } catch (error) { window.bettaLoading.fail(error.message); }

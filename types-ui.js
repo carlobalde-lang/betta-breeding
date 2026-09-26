@@ -5,7 +5,8 @@ const randomOption=document.createElement('option');randomOption.value='random';
 let catalogRandomColor=BettaTypes.randomColor();
 let catalogSeed=Math.floor(Math.random()*899999)+100000;
 const previewColor=()=>colorSelect.value==='random'?catalogRandomColor:colorSelect.value;
-for(const color of BettaTypes.colors){const option=document.createElement('option');option.value=color.id;option.textContent=color.name;colorSelect.append(option)}
+const classic=document.createElement('optgroup'),guide=document.createElement('optgroup');classic.label='Palette classiche';guide.label='Guida Nice Betta · 36 varianti';colorSelect.append(classic,guide);
+for(const color of BettaTypes.colors){const option=document.createElement('option');option.value=color.id;option.textContent=color.name;(color.guide?guide:classic).append(option)}
 function updateCatalog(){
  const grid=$('#type-grid');grid.replaceChildren();
  const natural=$('#catalog-species').value!=='splendens';grid.hidden=natural;colorSelect.disabled=natural;$('#catalog-dumbo').disabled=natural;
