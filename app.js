@@ -33,6 +33,25 @@ function drawPreview(image, fish) {
   image.width = 256; image.height = 160;
   if (window.betta3d) window.betta3d.thumbnail(image, fish);
 }
+function observeFish(id){
+  act(()=>{if(!state.fish.some(f=>f.id===id))return;appStore.select(id);if($('#laboratory').hidden)window.betta3d?.openLaboratory();const panel=$('#observation');if(innerWidth<=720||panel.getBoundingClientRect().top<0||panel.getBoundingClientRect().top>innerHeight*.6)panel.scrollIntoView({block:'start',behavior:'smooth'});});
+}
+const moveDialog=document.createElement('dialog');moveDialog.className='shelf-label-editor';moveDialog.id='fish-move-dialog';
+moveDialog.innerHTML='<form><h2>Sposta pesce</h2><p class="move-current"></p><label for="fish-move-target">Acquario di destinazione</label><select id="fish-move-target"></select><p>Massimo 4 pesci per acquario. Le vetrine si gestiscono dal negozio.</p><p class="move-error" role="status"></p><button type="submit">Sposta qui</button><button type="button" class="move-cancel">Annulla</button></form>';
+document.body.append(moveDialog);let movingId;
+moveDialog.querySelector('.move-cancel').onclick=()=>moveDialog.close();
+function openMoveFish(id){
+ const current=appStore.getState(),fish=current.fish.find(f=>f.id===id);if(!fish)return;movingId=id;
+ const housing=BettaStore.housing(current),target=$('#fish-move-target'),listed=current.career?.listings.some(l=>l.fishId===id),home=housing.assignments[id];target.replaceChildren();
+ moveDialog.querySelector('h2').textContent='Sposta '+fish.name+' · #'+id;
+ moveDialog.querySelector('.move-current').textContent=listed?'Pesce in vendita: ritiralo prima dal negozio.':'Attualmente nell’acquario #'+BettaStore.tankNumber(home);
+ for(const [title,slots] of [['Stanza 1 · Allevamento',housing.breeders],['Stanza 2 · Crescita',[...housing.nursery,...Array.from({length:24},(_,i)=>({key:'nursery-'+(housing.nursery.length+i),name:'Vasca '+(housing.nursery.length+i+1),fish:[]}))]]]){
+  const group=document.createElement('optgroup');group.label=title;for(const slot of slots){const option=document.createElement('option');option.value=slot.key;option.textContent='#'+BettaStore.tankNumber(slot.key)+' · '+(current.tankNames?.[slot.key]||slot.name)+' · '+slot.fish.length+'/4';option.disabled=slot.fish.length>=4&&slot.key!==home;group.append(option);}target.append(group);
+ }
+ if(home)target.value=home;target.disabled=!!listed;moveDialog.querySelector('[type="submit"]').disabled=!!listed;moveDialog.querySelector('.move-error').textContent='';moveDialog.showModal();target.focus();
+}
+moveDialog.querySelector('form').onsubmit=event=>{event.preventDefault();try{const key=$('#fish-move-target').value;appStore.moveFish(movingId,key);clearBrood();render();moveDialog.close();message('Pesce spostato nell’acquario #'+BettaStore.tankNumber(key)+'.');}catch(e){moveDialog.querySelector('.move-error').textContent=e.message;}};
+const moveSelected=document.createElement('button');moveSelected.id='move-selected-fish';moveSelected.className='secondary';moveSelected.textContent='Sposta in un acquario';moveSelected.onclick=()=>openMoveFish(selected().id);$('#export-fish').parentElement.append(moveSelected);
 function renderStage() {
   const fish = selected();
   window.betta3d?.setFish(fish);
@@ -48,9 +67,9 @@ function renderStage() {
   $('#fish-name').textContent = fish.name;
   $('#fish-form').textContent = BettaTypes.name(fish);
   $('#fish-traits').textContent = phenotype(fish);
-  $('#fish-family').textContent=fish.parents
-    ? 'Genitori: '+fish.parents.map(id=>{const p=state.fish.find(f=>f.id===id)||state.career?.archive.find(f=>f.id===id);return p?p.name+' (#'+id+')':'#'+id;}).join(' × ')
-    : 'Fondatore · nessun genitore registrato.';
+  const family=$('#fish-family');family.replaceChildren();
+  if(!fish.parents)family.textContent='Fondatore · nessun genitore registrato.';
+  else{family.append('Genitori: ');fish.parents.forEach((id,i)=>{if(i)family.append(' × ');const parent=state.fish.find(f=>f.id===id),archived=state.career?.archive.find(f=>f.id===id),name=parent||archived;const label=name?name.name+' (#'+id+')':'#'+id;if(parent){const link=document.createElement('button');link.className='fish-name-link';link.textContent=label;link.onclick=()=>observeFish(id);family.append(link);}else family.append(label);});}
   $('#stat-adults').textContent=state.fish.filter(f=>f.age>=2).length;
   $('#stat-young').textContent=state.fish.filter(f=>f.age<2).length;
   $('#stat-ready').textContent=state.fish.filter(f=>f.age===1).length;
@@ -107,15 +126,15 @@ function renderParents() {
     detail.textContent = fish ? phenotype(fish) : 'Seleziona un esemplare dalla vasca';
     slot.replaceChildren();
     if(fish){
-      const image=document.createElement('img');image.className='parent-preview';drawPreview(image,fish);slot.append(image);
-      const name=document.createElement('strong');name.textContent=fish.name;slot.append(name);
+      const image=document.createElement('img');image.className='parent-preview';drawPreview(image,fish);const observe=document.createElement('button');observe.className='parent-observe';observe.type='button';observe.setAttribute('aria-label','Osserva '+fish.name+' #'+fish.id);observe.setAttribute('aria-pressed',String(state.selected===fish.id));observe.onclick=()=>{observeFish(fish.id);$(selector+' .parent-observe')?.focus({preventScroll:true});};slot.append(observe);observe.append(image);
+      const name=document.createElement('strong');name.textContent=fish.name;observe.append(name);
       detail.textContent=BettaTypes.name(fish)+' · #'+fish.id;
     }else{
       const choose=document.createElement('button');choose.className='pick';choose.textContent='Scegli dalla vasca';
       choose.onclick=()=>{setRosterFilter(selector==='#mother-slot'?'F':'M');$('#collection-panel').scrollIntoView({block:'start'});$('#fish-filter').focus();};
       slot.append(choose);
     }
-    slot.append(detail);
+    if(fish)slot.querySelector('.parent-observe').append(detail);else slot.append(detail);
     $(selector==='#mother-slot'?'#clear-mother':'#clear-father').hidden=!fish;
   }
 }
@@ -175,11 +194,12 @@ function createCard(fish) {
   const card=document.createElement('div'); card.className='fish-card'; card.dataset.fishId=fish.id;
   const image=document.createElement('img'); image.className='fish-thumbnail';
   const info=document.createElement('div'); info.className='card-info';
-  const name=document.createElement('strong'),detail=document.createElement('small'),reason=document.createElement('small');reason.className='pair-reason';
+  const name=document.createElement('button'),detail=document.createElement('small'),reason=document.createElement('small');reason.className='pair-reason';
+  name.className='fish-name-link';name.onclick=()=>observeFish(fish.id);
   info.append(name,detail,reason);
   const actions=document.createElement('div'); actions.className='card-actions';
   const study=document.createElement('button'); study.className='pick'; study.textContent='Osserva';
-  study.onclick=()=>act(()=>{appStore.select(fish.id);if(innerWidth<=720)$('#observation').scrollIntoView({block:'start'});});
+  study.onclick=()=>observeFish(fish.id);
   const pick=document.createElement('button'); pick.className='pick';
   pick.onclick=()=>act(()=>{
     const candidate=state.fish.find(f=>f.id===fish.id);
@@ -187,7 +207,9 @@ function createCard(fish) {
     appStore.pick(candidate.id);
     if(innerWidth<=720)$('#breeding-panel').scrollIntoView({block:'start'});
   });
-  actions.append(study,pick); card.append(image,info,actions);
+  const preview=document.createElement('button');preview.className='fish-preview-control';preview.setAttribute('aria-label','Osserva '+fish.name+' #'+fish.id);preview.onclick=()=>observeFish(fish.id);preview.append(image);
+  const move=document.createElement('button');move.className='pick move-fish';move.textContent='Sposta';move.onclick=()=>openMoveFish(fish.id);
+  actions.append(study,pick,move); card.append(preview,info,actions);
   return {card,image,name,detail,pick,reason};
 }
 function renderRoster() {
@@ -259,7 +281,7 @@ function showBrood(ids,name){
   rosterView.brood=ids;rosterView.broodName=name;
   setRosterFilter('all',true);appStore.select(ids[0]);
 }
-window.bettaApp={store:appStore,render,drawPreview,message,showBrood,clearBrood};
+window.bettaApp={observeFish,store:appStore,render,drawPreview,message,showBrood,clearBrood};
 function setRosterFilter(filter,keepBrood=false){
   if(!keepBrood)clearBrood();
   rosterView.filter=filter;rosterView.query='';$('#fish-filter').value=filter;$('#fish-search').value='';renderRoster();
