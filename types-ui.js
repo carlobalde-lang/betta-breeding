@@ -5,8 +5,7 @@ const randomOption=document.createElement('option');randomOption.value='random';
 let catalogRandomColor=BettaTypes.randomColor();
 let catalogSeed=Math.floor(Math.random()*899999)+100000;
 const previewColor=()=>colorSelect.value==='random'?catalogRandomColor:colorSelect.value;
-const classic=document.createElement('optgroup'),guide=document.createElement('optgroup');classic.label='Palette classiche';guide.label='Guida Nice Betta · 36 varianti';colorSelect.append(classic,guide);
-for(const color of BettaTypes.colors){const option=document.createElement('option');option.value=color.id;option.textContent=color.name;(color.guide?guide:classic).append(option)}
+for(const color of BettaTypes.colors){const option=document.createElement('option');option.value=color.id;option.textContent=color.name;colorSelect.append(option)}
 function updateCatalog(){
  const grid=$('#type-grid');grid.replaceChildren();
  const natural=$('#catalog-species').value!=='splendens';grid.hidden=natural;colorSelect.disabled=natural;$('#catalog-dumbo').disabled=natural;
@@ -22,7 +21,7 @@ function updateCatalog(){
   card.onclick=()=>{catalogForm=form.id;updateCatalog()};
  }
  const fish=BettaTypes.specimen(catalogForm,previewColor(),$('#catalog-sex').value,$('#catalog-dumbo').checked);
- $('#catalog-selection').textContent=`${BettaTypes.name(fish)} · ${fish.name} · ${fish.sex==='F'?'Femmina':'Maschio'}`;
+ $('#catalog-selection').textContent=`${BettaTypes.name(fish)} · ${fish.name} · ${fish.sex==='F'?'Femmina':'Maschio'}${previewColor()==='alien-blue'?' · Per la forma della foto, scegli Halfmoon Plakat.':''}`;
 }
 $('#open-catalog').onclick=()=>{catalogRandomColor=BettaTypes.randomColor();catalogSeed=Math.floor(Math.random()*899999)+100000;$('#catalog').showModal();updateCatalog()};
 for(const selector of ['#catalog-color','#catalog-sex','#catalog-dumbo','#catalog-species'])$(selector).onchange=updateCatalog;

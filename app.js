@@ -3,9 +3,9 @@ const $ = selector => document.querySelector(selector);
 const appStore = BettaStore.create({
   getItem: key => localStorage.getItem(key),
   setItem: (key,value) => localStorage.setItem(key,value)
-});
+},{mode:window.bettaMode||'creative'});
 let state = appStore.getState();
-const labels = {T:'bianco (sim.)',N:'arancio (sim.)',P:'lavanda (sim.)',J:'giallo corpo (sim.)',Q:'puntinato (sim.)',U:'samurai (sim.)',Z:'bordo blu (sim.)',X:'bicolore (sim.)',G:'verde (sim.)',B:'Blu',M:'Marble',F:'Butterfly',I:'Iridescenza',K:'Nero',R:'Rosso',C:'Rame',O:'Dragon (sim.)',Y:'Giallo pinne (sim.)'};
+const labels = {V:'Reticolo Alien (sim.)',T:'bianco (sim.)',N:'arancio (sim.)',P:'lavanda (sim.)',J:'giallo corpo (sim.)',Q:'puntinato (sim.)',U:'samurai (sim.)',Z:'bordo blu (sim.)',X:'bicolore (sim.)',G:'verde (sim.)',B:'Blu',M:'Marble',F:'Butterfly',I:'Iridescenza',K:'Nero',R:'Rosso',C:'Rame',O:'Dragon (sim.)',Y:'Giallo pinne (sim.)'};
 const rosterCards = new Map();
 const rosterView={query:'',filter:'all',sort:'recent',brood:null,broodName:''};
 const selected = () => state.fish.find(f => f.id === state.selected) || state.fish[0];
@@ -49,7 +49,7 @@ function renderStage() {
   $('#fish-form').textContent = BettaTypes.name(fish);
   $('#fish-traits').textContent = phenotype(fish);
   $('#fish-family').textContent=fish.parents
-    ? 'Genitori: '+fish.parents.map(id=>{const p=state.fish.find(f=>f.id===id);return p?p.name+' (#'+id+')':'#'+id;}).join(' × ')
+    ? 'Genitori: '+fish.parents.map(id=>{const p=state.fish.find(f=>f.id===id)||state.career?.archive.find(f=>f.id===id);return p?p.name+' (#'+id+')':'#'+id;}).join(' × ')
     : 'Fondatore · nessun genitore registrato.';
   $('#stat-adults').textContent=state.fish.filter(f=>f.age>=2).length;
   $('#stat-young').textContent=state.fish.filter(f=>f.age<2).length;
@@ -287,10 +287,10 @@ function advanceMonth(){act(()=>{
 $('#advance').onclick=advanceMonth;
 $('#room-advance').onclick=advanceMonth;
 $('#reset').onclick=()=>{
-  if(confirm('Ricominciare con una coppia per ogni tipologia? La vasca attuale sarà sostituita.')) act(()=>{clearBrood();$('#birth-banner').hidden=true;appStore.reset();});
+  if(confirm('Ricominciare la modalità '+(state.mode==='career'?'carriera':'creativa')+'? Solo questo salvataggio sarà sostituito.')) act(()=>{clearBrood();$('#birth-banner').hidden=true;appStore.reset();});
 };
 $('#open-notes').onclick=()=>$('#notes').showModal();
-$('#export-tank').onclick=()=>act(()=>download(appStore.export(),'betta-vasca.json','application/json'));
+$('#export-tank').onclick=()=>act(()=>download(appStore.export(),'betta-'+state.mode+'.json','application/json'));
 $('#export-original').onclick=()=>act(()=>download(appStore.original()||'','betta-originale.txt','text/plain'));
 $('#import-tank').onclick=()=>$('#import-file').click();
 $('#import-file').onchange=async event=>{

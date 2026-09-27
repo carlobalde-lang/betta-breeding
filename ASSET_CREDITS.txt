@@ -1,0 +1,27 @@
+MODELLI AMBIENTALI — BETTA LAB
+Adattamenti: riduzione poligoni e texture, conversione materiali, scala e disposizione.
+Originali conservati in references/assets.
+
+Aquariumplants like Microsorum and Salutuya — Nullified (https://sketchfab.com/fdehell)
+CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+https://sketchfab.com/3d-models/aquariumplants-like-microsorum-and-salutuya-4986172e532d4e73bc3941a69f77a123
+
+Pond Weed — Valery.Li (https://sketchfab.com/Valery.Li)
+CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+https://sketchfab.com/3d-models/pond-weed-b34ed521c5bb45ca9191b6213e1830d6
+
+Rack — ilaida (https://sketchfab.com/ilaida)
+CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+https://sketchfab.com/3d-models/rack-33a4b088025e48098eabd4b2b18122aa
+
+Wooden table — Hrisan (https://sketchfab.com/Hrisan)
+CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+https://sketchfab.com/3d-models/wooden-table-7fc479c22ffa4a0eb4000390ce17170e
+
+Counter — gorzi (https://sketchfab.com/gorzi90)
+CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+https://sketchfab.com/3d-models/counter-47e1be52888640f89ab6dd8eeb008b35
+
+Hydria apothecary vase — Virtual Museums of Małopolska (https://sketchfab.com/WirtualneMuzeaMalopolski)
+CC0-1.0 (http://creativecommons.org/publicdomain/zero/1.0/)
+https://sketchfab.com/3d-models/hydria-apothecary-vase-7d6938c0c0b54b06a0210a982a73023e

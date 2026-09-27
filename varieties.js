@@ -14,17 +14,17 @@ window.BettaTypes = (() => {
     {id:'spade',name:'Spadetail',description:'Coda compatta con una punta centrale, resa stilizzata.',genes:{L:'ll',S:'SS',A:'aa',H:'hh'}}
   ];
   const colors = [
-    {id:'royal',name:'Royal blue',genes:{B:'Bb'}},
+    {id:'royal',name:'Royal Blue',genes:{B:'Bb',I:'II'}},
     {id:'steel',name:'Steel blue',genes:{B:'BB'}},
     {id:'turquoise',name:'Turchese',genes:{B:'bb'}},
     {id:'red',name:'Rosso',genes:{R:'RR',I:'ii'}},
     {id:'black',name:'Nero',genes:{K:'KK',I:'ii'}},
     {id:'copper',name:'Copper',genes:{C:'CC',I:'II'}},
     {id:'marble',name:'Marble',genes:{M:'MM'}},
-    {id:'koi',name:'Koi',genes:{M:'MM',R:'RR',I:'ii'}},
-    {id:'galaxy',name:'Koi Galaxy',genes:{M:'MM',R:'Rr',I:'II',C:'Cc'}},
+    {id:'koi',name:'Koi',genes:{M:'MM',R:'RR',K:'Kk',I:'ii'}},
+    {id:'galaxy',name:'Koi Galaxy',genes:{M:'MM',R:'RR',I:'II',K:'Kk',Q:'Qq'}},
     {id:'butterfly',name:'Butterfly',genes:{F:'FF'}},
-    {id:'dragon',name:'Dragon',genes:{O:'OO',R:'RR',I:'ii'}},
+    {id:'dragon',name:'Red Dragon',genes:{O:'OO',R:'RR',I:'ii'}},
     {id:'mustard',name:'Mustard Gas',genes:{Y:'YY',B:'Bb',I:'II'}}
   ];
   // Commercial varieties combine simulation factors; these are not molecular genotypes.
@@ -410,8 +410,18 @@ window.BettaTypes = (() => {
     }
   }
 ];
-  colors.push(...guideColors);
-  const colorBase={B:'Bb',M:'mm',F:'ff',I:'Ii',K:'kk',R:'rr',C:'cc',O:'oo',Y:'yy',T:'tt',N:'nn',P:'pp',J:'jj',Q:'qq',U:'uu',Z:'zz',X:'xx',G:'gg'};
+  // One canonical pool for menus and random founders. Historical IDs remain aliases.
+  const colorAliases=Object.freeze({'guide-steel':'steel','guide-turquoise':'turquoise','super-red':'red','copper-gold':'copper','blue-mustard':'mustard'});
+  for(const entry of guideColors){
+    const canonical=colors.find(c=>c.id===colorAliases[entry.id]);
+    if(canonical){canonical.name=entry.name;canonical.genes={...entry.genes};canonical.guide=true;}
+    else colors.push(entry);
+  }
+  colors.find(c=>c.id==='steel').name='Steel Blue';
+  colors.push({id:'alien-blue',name:'Alien blu',genes:{B:'Bb',K:'KK',I:'II',V:'VV'}});
+  for(const id of ['alien-mustard','alien-warrior'])colors.find(c=>c.id===id).genes.V='Vv';
+  colors.sort((a,b)=>a.name.localeCompare(b.name,'it',{sensitivity:'base'}));
+  const colorBase={B:'Bb',M:'mm',F:'ff',I:'Ii',K:'kk',R:'rr',C:'cc',O:'oo',Y:'yy',T:'tt',N:'nn',P:'pp',J:'jj',Q:'qq',U:'uu',Z:'zz',X:'xx',G:'gg',V:'vv'};
   const colorLoci=Object.keys(colorBase);
   const randomColor=(rng=Math.random)=>colors[Math.floor(rng()*colors.length)].id;
   function inheritColors(m,d,rng=Math.random){return Object.fromEntries(colorLoci.map(k=>[k,pair(m.genes[k][Math.floor(rng()*2)],d.genes[k][Math.floor(rng()*2)])]));}
@@ -515,12 +525,17 @@ window.BettaTypes = (() => {
     if(forecastCache.size>32)forecastCache.delete(forecastCache.keys().next().value);
     return result;
   }
+  function colorName(fish) {
+    if(window.BettaSpecies&&!window.BettaSpecies.ornamental(fish))return '';
+    const matches=colors.filter(color=>colorLoci.every(k=>(fish.genes?.[k]||colorBase[k])===(color.genes[k]||colorBase[k])));
+    return matches.map(color=>color.name).join(' / ');
+  }
   function specimen(formId,colorId,sex,dumbo=false) {
     const form=forms.find(x=>x.id===formId)||forms[0];
-    const color=colors.find(x=>x.id===(colorId==='random'?randomColor():colorId))||colors[0];
+    const color=colors.find(x=>x.id===(colorId==='random'?randomColor():(colorAliases[colorId]||colorId)))||colors.find(c=>c.id==='royal');
     return {name:color.name,sex,form:{...base,...form.genes,...(dumbo?{E:'ee'}:{})},
       genes:{...colorBase,...color.genes},
       seed:Math.floor(Math.random()*899999)+100000,age:4,gen:0,parents:null,phase:0};
   }
-  return {forms,colors,guideColors,colorLoci,randomColor,inheritColors,labels,normalize,traits,name,inherit,forecast,predict,distribution,development,specimen};
+  return {colorName,forms,colors,guideColors,colorAliases,colorLoci,randomColor,inheritColors,labels,normalize,traits,name,inherit,forecast,predict,distribution,development,specimen};
 })();
