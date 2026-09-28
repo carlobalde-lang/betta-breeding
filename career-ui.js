@@ -5,7 +5,7 @@
  const head=node('header'),heading=node('h2','Il tuo allevamento'),close=node('button','Chiudi','secondary');close.onclick=()=>dialog.close();head.append(heading,close);dialog.append(head);
  const notice=node('p','','career-notice');notice.setAttribute('role','status');dialog.append(notice);
  const stats=node('div',undefined,'career-stats'),tabs=node('nav',undefined,'career-tabs'),content=node('div',undefined,'career-content');dialog.append(stats,tabs,content);
- const footer=node('footer'),switchMode=node('button','Cambia modalità','secondary');switchMode.onclick=()=>{try{sessionStorage.removeItem('betta-mode');}catch{}location.reload();};footer.append(node('p','Carriera e creativa hanno salvataggi separati. Il cambio di modalità conserva i progressi.'),switchMode);dialog.append(footer);document.body.append(dialog);
+ const footer=node('footer'),switchMode=node('button','Cambia modalità / pesci','secondary');switchMode.onclick=()=>{try{sessionStorage.removeItem('betta-mode');sessionStorage.removeItem('fish-collection');}catch{}location.reload();};footer.append(node('p','Carriera e creativa hanno salvataggi separati. Il cambio di modalità conserva i progressi.'),switchMode);dialog.append(footer);document.body.append(dialog);
  const buttons=[];for(const container of [document.querySelector('.room-header'),document.querySelector('.top-right')]){const b=node('button','','room-button career-open');b.onclick=()=>open();container.append(b);buttons.push(b);}
  let tab='shop',goal=null,guideMemo=null,guidePair=null;
  const goalBanner=node('div',undefined,'breeding-goal');goalBanner.id='breeding-goal';goalBanner.hidden=true;document.getElementById('roster').before(goalBanner);

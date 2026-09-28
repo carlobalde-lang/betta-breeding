@@ -59,6 +59,7 @@ window.BettaAppearance = (() => {
     return result;
   }
   function describe(fish) {
+    if(window.FishCollection?.discus){const p=params(fish);return BettaTypes.colorName(fish)||['Discus · combinazione ereditata',p.red?'rosso':'blu/turchese',p.black?'pigmento scuro':'',p.marble?'disegno variabile':''].filter(Boolean).join(' · ');}
     if(!BettaSpecies.ornamental(fish)) return BettaSpecies.description(fish);
     const p=params(fish),parts=[];
     if(p.black<.9&&p.red<.9&&p.copper<.9&&p.white<1&&p.orange<1&&p.purple<1&&p.gold<1&&p.green<1)parts.push(['steel blue','royal blue','turchese'][p.blue]);

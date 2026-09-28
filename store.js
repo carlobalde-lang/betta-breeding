@@ -1,21 +1,23 @@
 'use strict';
 window.BettaStore = (() => {
   const VERSION = 2;
+  const isDiscus=!!window.FishCollection?.discus, tanksPerRoom=isDiscus?8:24;
   const KEY = 'betta-lab-v1'; // Keep the old key so existing aquariums migrate.
   const clone = value => JSON.parse(JSON.stringify(value));
   const integer = (n, min = 0) => Number.isSafeInteger(n) && n >= min;
   const formBase = window.BettaTypes.specimen('halfmoon', 'royal', 'F').form;
   const colorBase = window.BettaTypes.specimen('halfmoon', 'royal', 'F').genes;
-  const tankKey=key=>typeof key==='string'&&([...window.BettaTypes.forms.map(f=>f.id),'dumbo','imbellis','hendra'].includes(key.replace(/-male$/,''))||/^(nursery|shop)-[0-9]{1,4}$/.test(key));
+  const tankKey=key=>typeof key==='string'&&((isDiscus&&/^discus-[0-7]$/.test(key))||[...window.BettaTypes.forms.map(f=>f.id),'dumbo','imbellis','hendra'].includes(key.replace(/-male$/,''))||/^(nursery|shop)-[0-9]{1,4}$/.test(key));
   function tankNames(value={}){
     if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length>3024)throw Error('Targhette non valide.');
     for(const [key,text] of Object.entries(value))if(!tankKey(key)||typeof text!=='string'||!text.trim()||text.length>48)throw Error('Nome acquario non valido (massimo 48 caratteri).');
     return Object.fromEntries(Object.entries(value).map(([key,text])=>[key,text.trim()]));
   }
   const roomTypes=['halfmoon','overhalfmoon','crowntail','doubletail','plakat','hmpk','veiltail','delta','spade','dumbo','imbellis','hendra'];
-  const homeKeys=['F','M'].flatMap(sex=>roomTypes.map(type=>type+(sex==='M'?'-male':'')));
+  const homeKeys=isDiscus?Array.from({length:8},(_,i)=>'discus-'+i):['F','M'].flatMap(sex=>roomTypes.map(type=>type+(sex==='M'?'-male':'')));
   const homeKey=key=>homeKeys.includes(key)||/^nursery-(0|[1-9][0-9]{0,3})$/.test(key)&&Number(key.slice(8))<3000;
   function preferredTank(f){
+    if(isDiscus)return homeKeys[Math.floor((f.id-1)/2)%8];
     let type=f.species;
     if(window.BettaSpecies.ornamental(f)){const t=window.BettaTypes.traits(f);type=t.dumbo?'dumbo':t.split?'doubletail':t.crown>=.8?'crowntail':t.veil>=.5?'veiltail':t.spade>=.5?'spade':t.short?(t.spread>=3?'hmpk':'plakat'):t.spread>=4?'overhalfmoon':t.spread>=3?'halfmoon':'delta';}
     return type+(f.sex==='M'?'-male':'');
@@ -43,14 +45,15 @@ window.BettaStore = (() => {
   function housing(state){
     const assignments=assignTanks(state),slots=new Map();
     const make=(key,name)=>({key,id:key,number:tankNumber(key),name,fish:[]});
-    for(const key of homeKeys){const type=key.replace(/-male$/,''),name=window.BettaTypes.forms.find(f=>f.id===type)?.name||({dumbo:'Dumbo',imbellis:'Imbellis',hendra:'Hendra'})[type]||type;slots.set(key,make(key,name+(key.endsWith('-male')?' · Maschio':' · Femmina')));}
-    const last=Math.max(23,...Object.values(assignments).filter(k=>k.startsWith('nursery-')).map(k=>Number(k.slice(8))));
-    for(let i=0;i<Math.ceil((last+1)/24)*24;i++)slots.set('nursery-'+i,make('nursery-'+i,'Vasca '+(i+1)));
+    for(const key of homeKeys){const type=key.replace(/-male$/,''),name=window.BettaTypes.forms.find(f=>f.id===type)?.name||({dumbo:'Dumbo',imbellis:'Imbellis',hendra:'Hendra'})[type]||type;slots.set(key,make(key,isDiscus?'Discus '+(homeKeys.indexOf(key)+1):name+(key.endsWith('-male')?' · Maschio':' · Femmina')));}
+    const last=Math.max(tanksPerRoom-1,...Object.values(assignments).filter(k=>k.startsWith('nursery-')).map(k=>Number(k.slice(8))));
+    for(let i=0;i<Math.ceil((last+1)/tanksPerRoom)*tanksPerRoom;i++)slots.set('nursery-'+i,make('nursery-'+i,'Vasca '+(i+1)));
     for(const f of state.fish){const key=assignments[f.id];if(key)slots.get(key).fish.push(f);}
-    return {assignments,breeders:[...slots.values()].slice(0,24),nursery:[...slots.values()].slice(24)};
+    return {assignments,breeders:[...slots.values()].slice(0,tanksPerRoom),nursery:[...slots.values()].slice(tanksPerRoom)};
   }
   function migrate(input) {
     if (!input || typeof input !== 'object') throw Error('Il file non contiene una vasca.');
+    if((input.collection||'betta')!==(isDiscus?'discus':'betta'))throw Error('Questo backup appartiene a un altro allevamento.');
     const version = input.schemaVersion ?? 0;
     if (!integer(version) || version > VERSION) throw Error('Versione del salvataggio non supportata.');
     if (!Array.isArray(input.fish) || !input.fish.length || input.fish.length > 3000) throw Error('La vasca deve contenere da 1 a 3000 pesci.');
@@ -94,7 +97,7 @@ window.BettaStore = (() => {
     const minimumNext=Math.max(...fish.map(f=>f.id),...(career?.archive||[]).map(f=>f.id))+1;
     if(input.nextFishId!==undefined&&(!integer(input.nextFishId,1)))throw Error('Contatore esemplari non valido.');
     const migrated={
-      mode,...(career?{career}:{}),nextFishId:Math.max(input.nextFishId??minimumNext,minimumNext),
+      mode,collection:isDiscus?'discus':'betta',...(career?{career}:{}),nextFishId:Math.max(input.nextFishId??minimumNext,minimumNext),
       schemaVersion: VERSION, fish,tankNames:tankNames(input.tankNames),
       selected: validSelection(input.selected) ?? fish[0].id,
       mother: fish.some(f => f.id === input.mother && f.sex === 'F') ? input.mother : null,
@@ -113,14 +116,18 @@ window.BettaStore = (() => {
         fish.push(window.BettaTypes.normalize(f));
       }
     };
+    if(isDiscus&&mode==='creative'){
+      for(const color of window.BettaTypes.colors)pair(sex=>window.BettaTypes.specimen('halfmoon',color.id,sex),color.name);
+      return {schemaVersion:VERSION,collection:'discus',mode,tankNames:{},nextFishId:fish.length+1,fish,selected:1,mother:null,father:null,month:1,log:['Benvenuto nel tuo allevamento Discus.']};
+    }
     if(mode==='career'){
       for(const [i,color] of window.BettaCareer.starters.entries())pair(sex=>window.BettaTypes.specimen(['halfmoon','plakat','veiltail','delta'][i],color,sex),window.BettaCareer.byId(color).name);
-      return {schemaVersion:VERSION,mode,tankNames:{},nextFishId:fish.length+1,career:window.BettaCareer.initial(),fish,selected:1,mother:null,father:null,month:1,log:['Benvenuto: alleva nuove livree, allestisci il negozio e completa gli ordini.']};
+      return {schemaVersion:VERSION,collection:isDiscus?'discus':'betta',mode,tankNames:{},nextFishId:fish.length+1,career:window.BettaCareer.initial(),fish,selected:1,mother:null,father:null,month:1,log:['Benvenuto: alleva nuove livree, allestisci il negozio e completa gli ordini.']};
     }
     for (const form of window.BettaTypes.forms) pair(sex => window.BettaTypes.specimen(form.id,'random',sex), form.name);
     pair(sex => window.BettaTypes.specimen('halfmoon','random',sex,true), 'Dumbo');
     for (const species of ['imbellis','hendra']) pair(sex => window.BettaSpecies.specimen(species,sex), window.BettaSpecies.names[species]);
-    return {schemaVersion:VERSION,mode,tankNames:{},nextFishId:fish.length+1, fish, selected:1, mother:null, father:null, month:1, log:['Una coppia per ogni tipologia è pronta per l’allevamento.']};
+    return {schemaVersion:VERSION,collection:isDiscus?'discus':'betta',mode,tankNames:{},nextFishId:fish.length+1, fish, selected:1, mother:null, father:null, month:1, log:['Una coppia per ogni tipologia è pronta per l’allevamento.']};
   }
   function relationship(m,d) {
     if (!m || !d) return '';
@@ -163,7 +170,7 @@ window.BettaStore = (() => {
   }
   function create(storage,{mode='creative'}={}) {
     if(!['creative','career'].includes(mode))throw Error('Modalità non valida.');
-    const saveKey=mode==='career'?'betta-career-v1':KEY;
+    const saveKey=isDiscus?'discus-'+mode+'-v2':mode==='career'?'betta-career-v1':KEY;
     let state, blocked = false, notice = '';
     const listeners = new Set();
     function persist() {
@@ -173,7 +180,8 @@ window.BettaStore = (() => {
     }
     try {
       const raw = storage.getItem(saveKey);
-      state = raw ? migrate(JSON.parse(raw)) : founders(mode);
+      const legacy=isDiscus&&!raw?storage.getItem('discus-'+mode+'-v1'):null;
+      state = raw ? migrate(JSON.parse(raw)) : legacy?migrate(window.FishCollection.convertLegacy(JSON.parse(legacy),mode)):founders(mode);
       if(state.mode!==mode)throw Error('Modalità del salvataggio non corrispondente.');
       state.tankAssignments=assignTanks(state);persist();
     } catch {
@@ -205,9 +213,10 @@ window.BettaStore = (() => {
       clearParent(sex) { if(['F','M'].includes(sex))commit({...state,[sex==='F'?'mother':'father']:null}); },
       subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
       export: () => JSON.stringify(state,null,2),
-      original: () => storage.getItem(saveKey),
+      original: () => storage.getItem(saveKey)||(isDiscus?storage.getItem('discus-'+mode+'-v1'):null),
       import(text) {
-        const next = migrate(JSON.parse(text)); // Validate before touching state or storage.
+        const parsed=JSON.parse(text);
+        const next = migrate(isDiscus&&parsed.version===1?window.FishCollection.convertLegacy(parsed,mode):parsed); // Validate before touching state or storage.
         if(next.mode!==mode)throw Error('Questo backup appartiene alla modalità '+(next.mode==='career'?'carriera':'creativa')+'. Cambia modalità per importarlo.');
         blocked = false; commit(next);
       },

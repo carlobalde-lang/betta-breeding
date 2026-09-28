@@ -45,7 +45,7 @@ function openMoveFish(id){
  const housing=BettaStore.housing(current),target=$('#fish-move-target'),listed=current.career?.listings.some(l=>l.fishId===id),home=housing.assignments[id];target.replaceChildren();
  moveDialog.querySelector('h2').textContent='Sposta '+fish.name+' · #'+id;
  moveDialog.querySelector('.move-current').textContent=listed?'Pesce in vendita: ritiralo prima dal negozio.':'Attualmente nell’acquario #'+BettaStore.tankNumber(home);
- for(const [title,slots] of [['Stanza 1 · Allevamento',housing.breeders],['Stanza 2 · Crescita',[...housing.nursery,...Array.from({length:24},(_,i)=>({key:'nursery-'+(housing.nursery.length+i),name:'Vasca '+(housing.nursery.length+i+1),fish:[]}))]]]){
+ for(const [title,slots] of [['Stanza 1 · Allevamento',housing.breeders],['Stanza 2 · Crescita',[...housing.nursery,...Array.from({length:window.FishCollection?.tanks||24},(_,i)=>({key:'nursery-'+(housing.nursery.length+i),name:'Vasca '+(housing.nursery.length+i+1),fish:[]}))]]]){
   const group=document.createElement('optgroup');group.label=title;for(const slot of slots){const option=document.createElement('option');option.value=slot.key;option.textContent='#'+BettaStore.tankNumber(slot.key)+' · '+(current.tankNames?.[slot.key]||slot.name)+' · '+slot.fish.length+'/4';option.disabled=slot.fish.length>=4&&slot.key!==home;group.append(option);}target.append(group);
  }
  if(home)target.value=home;target.disabled=!!listed;moveDialog.querySelector('[type="submit"]').disabled=!!listed;moveDialog.querySelector('.move-error').textContent='';moveDialog.showModal();target.focus();
@@ -150,6 +150,7 @@ function renderForecast() {
   const expanded=box.querySelector('details')?.open||false;
   box.replaceChildren();
   if (!compatibility.ornamental) { box.textContent = compatibility.message; return; }
+  if(window.FishCollection?.discus){for(const color of BettaTypes.colors){const probability=BettaBreedingGuide.probability(mom,dad,color.id)*100;const row=document.createElement('p');row.textContent=color.name+': '+new Intl.NumberFormat('it',{maximumFractionDigits:2}).format(probability)+'%';box.append(row);}const note=document.createElement('small');note.textContent='Probabilità delle livree riconosciute dal gioco. I piccoli possono combinare altri tratti; modello genetico semplificato, non validato per i discus.';box.append(note);return;}
   const heading = document.createElement('strong');
   heading.textContent = 'Previsione della simulazione';
   box.append(heading);
