@@ -8,7 +8,7 @@ if(FishCollection.discus){
  types.forms.splice(0,types.forms.length,{id:'halfmoon',name:'Discus',description:'Corpo alto e discoidale, pinne raccolte.',genes:{L:'ll',A:'aa',H:'hh'}});
  types.name=()=> 'Discus';
  const ancestry=()=>({discus:1});
- window.BettaSpecies={ids:['discus'],names:{discus:'Discus'},ancestry,normalize:f=>{f.species='discus';f.ancestry=ancestry();return f;},ornamental:()=>true,label:()=> 'Discus',weights:()=>({imbellis:0,hendra:0}),offspring:()=>({species:'discus',ancestry:ancestry()}),compatibility:(m,d)=>({allowed:!!(m&&d),ornamental:!!(m&&d),message:'Quattro piccoli con alleli ereditati da entrambi i genitori nel modello del gioco.'}),description:()=> 'Discus · modello illustrativo',specimen:(id,sex)=>types.specimen('halfmoon','random',sex)};
+ window.BettaSpecies={ids:['discus'],names:{discus:'Discus'},ancestry,normalize:f=>{f.species='discus';f.ancestry=ancestry();return f;},ornamental:()=>true,coatEnabled:()=>true,label:()=> 'Discus',weights:()=>({imbellis:0,hendra:0}),offspring:()=>({species:'discus',ancestry:ancestry()}),compatibility:(m,d)=>({allowed:!!(m&&d),ornamental:!!(m&&d),message:'Quattro piccoli con alleli ereditati da entrambi i genitori nel modello del gioco.'}),description:()=> 'Discus · modello illustrativo',specimen:(id,sex)=>types.specimen('halfmoon','random',sex)};
  FishCollection.convertLegacy=(old,mode)=>{
   if(old?.collection!=='discus'||old.mode!==mode||old.version!==1||!Array.isArray(old.fish)||!old.fish.length)throw Error('Salvataggio Discus precedente non valido.');
   const coats={blue:'royal',turquoise:'turquoise',red:'red',wild:'black',pigeon:'marble',leopard:'koi'};

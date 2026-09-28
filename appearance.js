@@ -6,7 +6,7 @@ window.BettaAppearance = (() => {
     return JSON.stringify([
       BettaTypes.colorLoci.map(k => fish.genes[k]),
       Object.keys(BettaTypes.labels).map(k => fish.form[k]),
-      fish.seed, fish.phase || 0, fish.sex, fish.age, BettaSpecies.weights(fish)
+      fish.seed, fish.phase || 0, fish.sex, fish.age, BettaSpecies.weights(fish),fish.styledCoat===true
     ]);
   }
   // Artistic phenotype from inherited pigment loci, not an established eye-color locus.
@@ -15,9 +15,9 @@ window.BettaAppearance = (() => {
     const g=fish.genes,seed=Number(fish.seed)||0;
     const rand=n=>{const v=Math.sin(seed*.173+n*127.1)*43758.5453;return v-Math.floor(v);};
     const present=k=>(g[k]||'').includes(k);
-    const marble=present('M')&&BettaSpecies.ornamental(fish);
+    const marble=present('M')&&BettaSpecies.coatEnabled(fish);
     function color(n){
-      if(!BettaSpecies.ornamental(fish))return rand(n)<.72?0:1;
+      if(!BettaSpecies.coatEnabled(fish))return rand(n)<.72?0:1;
       const r=rand(n);
       if((present('R')||present('N'))&&r<.18)return present('N')?5:4;
       if((present('T')||present('I')||present('V'))&&r<.58)return present('G')?3:2;
@@ -35,6 +35,12 @@ window.BettaAppearance = (() => {
     const signature=key(fish);
     if(cache.has(signature)) return cache.get(signature);
     const g=fish.genes;
+    // Phenotypic controls, not literal alkal2l/bco1l genotypes. The published
+    // effects are regional and polygenic; the game's I/R/N loci remain abstract.
+    const dose=k=>[...(g[k]||'')].filter(a=>a===k).length/2;
+    const irid=dose('I')===0?.24:dose('I')===.5?.72:1;
+    const red=dose('R')===0?0:dose('R')===.5?.68:1;
+    const orange=dose('N');
     const result=Object.freeze({
       ...eyes(fish),
       alien:[...(g.V||'vv')].filter(a=>a==='V').length/2,
@@ -43,9 +49,15 @@ window.BettaAppearance = (() => {
       dragon:has(g,'O')?1:0, yellow:has(g,'Y')?1:0,
       marble:has(g,'M')?(g.M==='MM'?1:.72):0,
       butterfly:has(g,'F')?(g.F==='FF'?1:.76):0,
-      iridescence:has(g,'I')?(g.I==='II'?1:.72):.24,
+      iridescence:irid,
+      // Documented direction: body blue competes with red; red hue can vary.
+      // Hypothetical game modifiers: copper/green boost regional reflections,
+      // gold warms red. None represents an edit to a real molecular gene.
+      bodyIridescence:Math.min(1,Math.max(.02,irid*(1-.42*red)*(1+.16*dose('C')+.08*dose('G')))),
+      finIridescence:Math.min(1,Math.max(.02,irid*(1-.12*red)*(1+.10*dose('C')))),
+      redHue:Math.min(1,orange*.72+dose('J')*.10+(dose('R')===.5?.13:0)),
       black:has(g,'K')?(g.K==='KK'?1:.62):0,
-      red:has(g,'R')?(g.R==='RR'?1:.68):0,
+      red,
       copper:has(g,'C')?(g.C==='CC'?1:.66):0,
       spots:has(g,'M')?.53+.16*(fish.seed%7)/7:.12,
       contrast:has(g,'M')?.75:.31,
@@ -60,7 +72,7 @@ window.BettaAppearance = (() => {
   }
   function describe(fish) {
     if(window.FishCollection?.discus){const p=params(fish);return BettaTypes.colorName(fish)||['Discus · combinazione ereditata',p.red?'rosso':'blu/turchese',p.black?'pigmento scuro':'',p.marble?'disegno variabile':''].filter(Boolean).join(' · ');}
-    if(!BettaSpecies.ornamental(fish)) return BettaSpecies.description(fish);
+    if(!BettaSpecies.coatEnabled(fish)) return BettaSpecies.description(fish);
     const p=params(fish),parts=[];
     if(p.black<.9&&p.red<.9&&p.copper<.9&&p.white<1&&p.orange<1&&p.purple<1&&p.gold<1&&p.green<1)parts.push(['steel blue','royal blue','turchese'][p.blue]);
     if(p.black) parts.unshift('nero');

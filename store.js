@@ -2,11 +2,12 @@
 window.BettaStore = (() => {
   const VERSION = 2;
   const isDiscus=!!window.FishCollection?.discus, tanksPerRoom=isDiscus?8:24;
-  const KEY = 'betta-lab-v1'; // Keep the old key so existing aquariums migrate.
+  const KEY = 'fishchromia-creative-v1';
   const clone = value => JSON.parse(JSON.stringify(value));
   const integer = (n, min = 0) => Number.isSafeInteger(n) && n >= min;
   const formBase = window.BettaTypes.specimen('halfmoon', 'royal', 'F').form;
   const colorBase = window.BettaTypes.specimen('halfmoon', 'royal', 'F').genes;
+  const defaultFishName=f=>[window.BettaTypes.name(f)||'Betta',f.sex==='F'?'femmina':'maschio',f.id].join(' ');
   const tankKey=key=>typeof key==='string'&&((isDiscus&&/^discus-[0-7]$/.test(key))||[...window.BettaTypes.forms.map(f=>f.id),'dumbo','imbellis','hendra'].includes(key.replace(/-male$/,''))||/^(nursery|shop)-[0-9]{1,4}$/.test(key));
   function tankNames(value={}){
     if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length>3024)throw Error('Targhette non valide.');
@@ -63,13 +64,14 @@ window.BettaStore = (() => {
       ids.add(source.id);
       if (!['F', 'M'].includes(source.sex)) throw Error('Sesso del pesce non valido.');
       const f = {};
-      for (const key of ['id','name','sex','age','gen','parents','seed','phase','species','ancestry','genes','form']) {
+      for (const key of ['id','name','sex','age','gen','parents','seed','phase','species','ancestry','genes','form','styledCoat']) {
         if (source[key] !== undefined) f[key] = clone(source[key]);
       }
       if (typeof f.name !== 'string' || !f.name.trim() || f.name.length > 120) throw Error('Nome del pesce non valido.');
       for (const key of ['age','gen','seed']) if (!integer(f[key])) throw Error('Età, generazione o seed non validi.');
       f.phase ??= 0;
       if (!Number.isFinite(f.phase)) throw Error('Fase della livrea non valida.');
+      if(f.styledCoat!==undefined&&typeof f.styledCoat!=='boolean')throw Error('Livrea creativa non valida.');
       if (f.parents != null && (!Array.isArray(f.parents) || f.parents.length !== 2 || !f.parents.every(p => integer(p, 1) && p !== f.id))) throw Error('Genealogia non valida.');
       f.parents ??= null;
       for (const [field, defaults] of [['genes', colorBase], ['form', formBase]]) {
@@ -87,6 +89,9 @@ window.BettaStore = (() => {
         if (values.some(v => !Number.isFinite(v) || v < 0) || values.reduce((a,b) => a+b,0) <= 0) throw Error('Quote genealogiche non valide.');
       } else if (f.species === 'hybrid') throw Error('Ascendenza dell’ibrido mancante.');
       window.BettaTypes.normalize(f);
+      if(f.name==='Piccolo '+f.id||f.gen===0&&/ · (Femmina|Maschio)$/.test(f.name)&&[
+        ...window.BettaTypes.colors.map(color=>color.name),...window.BettaTypes.forms.map(form=>form.name),'Dumbo','Imbellis','Hendra'
+      ].includes(f.name.replace(/ · (Femmina|Maschio)$/,'')))f.name=defaultFishName(f);
       return f;
     });
     if (!integer(input.month, 1)) throw Error('Mese della vasca non valido.');
@@ -112,7 +117,8 @@ window.BettaStore = (() => {
     const pair = (make, name) => {
       for (const sex of ['F','M']) {
         const f = make(sex);
-        Object.assign(f, {id:fish.length+1, name:name+' · '+(sex==='F'?'Femmina':'Maschio'), phase:Math.random()*6.28});
+        Object.assign(f, {id:fish.length+1, phase:Math.random()*6.28});
+        f.name=defaultFishName(f);
         fish.push(window.BettaTypes.normalize(f));
       }
     };
@@ -170,7 +176,7 @@ window.BettaStore = (() => {
   }
   function create(storage,{mode='creative'}={}) {
     if(!['creative','career'].includes(mode))throw Error('Modalità non valida.');
-    const saveKey=isDiscus?'discus-'+mode+'-v2':mode==='career'?'betta-career-v1':KEY;
+    const saveKey=isDiscus?'discus-'+mode+'-v2':mode==='career'?'fishchromia-career-v1':KEY;
     let state, blocked = false, notice = '';
     const listeners = new Set();
     function persist() {
@@ -207,6 +213,11 @@ window.BettaStore = (() => {
         const names={...state.tankNames};if(text.trim())names[key]=text.trim();else delete names[key];
         commit({...state,tankNames:tankNames(names)});
       },
+      renameFish(id,text){
+        if(typeof text!=='string'||!text.trim()||text.trim().length>120)throw Error('Il nome deve contenere da 1 a 120 caratteri.');
+        const fish=state.fish.find(f=>f.id===id);if(!fish)throw Error('Esemplare non trovato.');
+        commit({...state,fish:state.fish.map(f=>f.id===id?{...f,name:text.trim()}:f)});
+      },
       career(action,data){const next=window.BettaCareer.transact(clone(state),action,data);commit(next);},
       getStatus: () => ({notice, blocked}),
       breedingStatus: () => breedingStatus(state),
@@ -234,7 +245,7 @@ window.BettaStore = (() => {
       add(specimen) {
         if(mode==='career')throw Error('In carriera acquista riproduttori dal mercato.');
         if(state.fish.length>=3000) throw Error('Vasca piena: esporta una copia prima di iniziare un nuovo allevamento.');
-        const f=window.BettaTypes.normalize({...clone(specimen),id:nextId()});
+        const f=window.BettaTypes.normalize({...clone(specimen),id:nextId()});f.name=defaultFishName(f);
         const next=migrate({...state,fish:[f,...state.fish],nextFishId:f.id+1,selected:f.id,[f.sex==='F'?'mother':'father']:f.id});
         next.log=[f.name+' aggiunto alla vasca.',...state.log].slice(0,5);commit(next);
       },
@@ -244,10 +255,10 @@ window.BettaStore = (() => {
         if(state.fish.length>2996) throw Error('Spazio insufficiente nella vasca.');
         const start=nextId();
         const batch=Array.from({length:4},(_,i)=>({
-          ...window.BettaSpecies.offspring(m,d),id:start+i,name:'Piccolo '+(start+i),
+          ...window.BettaSpecies.offspring(m,d),styledCoat:!!(m.styledCoat||d.styledCoat),id:start+i,
           sex:Math.random()<.5?'F':'M',genes:window.BettaTypes.inheritColors(m,d),form:window.BettaTypes.inherit(m,d),
           seed:Math.floor(Math.random()*899999)+100000,phase:Math.random()*6.28,age:0,gen:Math.max(m.gen,d.gen)+1,parents:[m.id,d.id]
-        }));
+        })).map(f=>({...f,name:defaultFishName(f)}));
         const next={...clone(state),fish:[...batch,...state.fish],nextFishId:start+4,selected:batch[0].id,log:[m.name+' × '+d.name+': quattro piccoli.',...state.log].slice(0,5)};
         if(mode==='career')window.BettaCareer.discover(next,batch);commit(next);
         return true;

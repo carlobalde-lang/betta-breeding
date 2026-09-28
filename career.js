@@ -19,6 +19,10 @@ window.BettaCareer=(()=>{
   if(!reference)reference=colors().map(c=>({id:c.id,key:signature(BettaTypes.specimen('halfmoon',c.id,'M'))}));
   const key=signature(fish);return reference.filter(c=>c.key===key).map(c=>c.id);
  }
+ function displayName(fish){
+  return fish.name;
+ }
+ function coatName(fish){return matches(fish).map(id=>byId(id).name).join(' / ')||BettaTypes.colorName(fish)||'Combinazione ereditata';}
  function rarity(fish){return 1+['M','F','C','O','T','N','P','J','Q','U','Z','X','G','V'].filter(k=>fish.genes[k]?.includes(k)).length;}
  function demand(month){return colors()[(month*7)%colors().length].id;}
  function value(fish,month=1){return Math.round((38+rarity(fish)*17+Math.min(fish.gen,6)*5+(fish.form.E==='ee'?15:0))*(matches(fish).includes(demand(month))?1.25:1));}
@@ -80,7 +84,7 @@ window.BettaCareer=(()=>{
   }else if(action==='buy'){
    const offer=offers(state).find(o=>o.id===data.offerId);if(!offer||!['F','M'].includes(data.sex))throw Error('Offerta non valida.');
    if(state.fish.length>=c.capacity)throw Error('Allevamento pieno: amplia o vendi alcuni pesci.');spend(offer.price);
-   const f=BettaTypes.normalize(BettaTypes.specimen('halfmoon',offer.colorId,data.sex));f.id=state.nextFishId++;state.fish.unshift(f);state.selected=f.id;
+   const f=BettaTypes.normalize(BettaTypes.specimen('halfmoon',offer.colorId,data.sex));f.id=state.nextFishId++;f.name=(BettaTypes.name(f)||'Betta')+' '+(f.sex==='F'?'femmina':'maschio')+' '+f.id;state.fish.unshift(f);state.selected=f.id;
    state.log.unshift('Acquistato '+f.name+' · '+offer.price+' monete.');
   }else if(action==='accept'){
    const o=c.orders.find(o=>o.id===data.orderId&&o.status==='available'&&o.deadline>=state.month);if(!o)throw Error('Ordine non disponibile.');
@@ -115,5 +119,5 @@ window.BettaCareer=(()=>{
   }
   c.visits=visits;state.log=state.log.slice(0,5);return state;
  }
- return {starters,initial,normalize,matches,signature,value,chance,offers,byId,demand,transact,discover,advance};
+ return {starters,initial,normalize,matches,displayName,coatName,signature,value,chance,offers,byId,demand,transact,discover,advance};
 })();

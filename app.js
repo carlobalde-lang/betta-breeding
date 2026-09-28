@@ -7,11 +7,19 @@ const appStore = BettaStore.create({
 let state = appStore.getState();
 const labels = {V:'Reticolo Alien (sim.)',T:'bianco (sim.)',N:'arancio (sim.)',P:'lavanda (sim.)',J:'giallo corpo (sim.)',Q:'puntinato (sim.)',U:'samurai (sim.)',Z:'bordo blu (sim.)',X:'bicolore (sim.)',G:'verde (sim.)',B:'Blu',M:'Marble',F:'Butterfly',I:'Iridescenza',K:'Nero',R:'Rosso',C:'Rame',O:'Dragon (sim.)',Y:'Giallo pinne (sim.)'};
 const rosterCards = new Map();
-const rosterView={query:'',filter:'all',sort:'recent',brood:null,broodName:''};
+const rosterView={query:'',filter:'all',coat:'all',sort:'recent',brood:null,broodName:''};
 const selected = () => state.fish.find(f => f.id === state.selected) || state.fish[0];
 const parents = () => [state.fish.find(f => f.id === state.mother),state.fish.find(f => f.id === state.father)];
 const genotypeParams = BettaAppearance.params;
 const phenotype = BettaAppearance.describe;
+const fishLabel = fish => state.mode==='career' ? BettaCareer.displayName(fish) : fish.name;
+const coatLabel = fish => !BettaSpecies.coatEnabled(fish)
+  ? fish.species==='hybrid'?'Ibrida simulata':'Naturale · '+BettaSpecies.label(fish)
+  : state.mode==='career' ? BettaCareer.coatName(fish) : BettaTypes.colorName(fish)||'Combinazione ereditata';
+const colorLabel = fish => {
+  const description=phenotype(fish),catalog=BettaTypes.colorName(fish);
+  return catalog&&description.startsWith(catalog+' · ')?description.slice(catalog.length+3):description;
+};
 
 function message(text) {
   const notice=appStore.getStatus().notice;
@@ -43,7 +51,7 @@ moveDialog.querySelector('.move-cancel').onclick=()=>moveDialog.close();
 function openMoveFish(id){
  const current=appStore.getState(),fish=current.fish.find(f=>f.id===id);if(!fish)return;movingId=id;
  const housing=BettaStore.housing(current),target=$('#fish-move-target'),listed=current.career?.listings.some(l=>l.fishId===id),home=housing.assignments[id];target.replaceChildren();
- moveDialog.querySelector('h2').textContent='Sposta '+fish.name+' · #'+id;
+ moveDialog.querySelector('h2').textContent='Sposta '+fishLabel(fish)+' · #'+id;
  moveDialog.querySelector('.move-current').textContent=listed?'Pesce in vendita: ritiralo prima dal negozio.':'Attualmente nell’acquario #'+BettaStore.tankNumber(home);
  for(const [title,slots] of [['Stanza 1 · Allevamento',housing.breeders],['Stanza 2 · Crescita',[...housing.nursery,...Array.from({length:window.FishCollection?.tanks||24},(_,i)=>({key:'nursery-'+(housing.nursery.length+i),name:'Vasca '+(housing.nursery.length+i+1),fish:[]}))]]]){
   const group=document.createElement('optgroup');group.label=title;for(const slot of slots){const option=document.createElement('option');option.value=slot.key;option.textContent='#'+BettaStore.tankNumber(slot.key)+' · '+(current.tankNames?.[slot.key]||slot.name)+' · '+slot.fish.length+'/4';option.disabled=slot.fish.length>=4&&slot.key!==home;group.append(option);}target.append(group);
@@ -52,6 +60,46 @@ function openMoveFish(id){
 }
 moveDialog.querySelector('form').onsubmit=event=>{event.preventDefault();try{const key=$('#fish-move-target').value;appStore.moveFish(movingId,key);clearBrood();render();moveDialog.close();message('Pesce spostato nell’acquario #'+BettaStore.tankNumber(key)+'.');}catch(e){moveDialog.querySelector('.move-error').textContent=e.message;}};
 const moveSelected=document.createElement('button');moveSelected.id='move-selected-fish';moveSelected.className='secondary';moveSelected.textContent='Sposta in un acquario';moveSelected.onclick=()=>openMoveFish(selected().id);$('#export-fish').parentElement.append(moveSelected);
+const renameDialog=document.createElement('dialog');renameDialog.className='shelf-label-editor';renameDialog.innerHTML='<form><h2>Rinomina esemplare</h2><label for="fish-rename-input">Nome</label><input id="fish-rename-input" maxlength="120" required><p class="rename-error" role="status"></p><button type="submit">Salva nome</button><button type="button" class="rename-cancel">Annulla</button></form>';document.body.append(renameDialog);
+const renameButton=document.createElement('button');renameButton.type='button';renameButton.className='text-button';renameButton.textContent='Modifica nome';renameButton.onclick=()=>{renameDialog.querySelector('input').value=selected().name;renameDialog.querySelector('.rename-error').textContent='';renameDialog.showModal();renameDialog.querySelector('input').select();};$('#fish-name').after(renameButton);
+renameDialog.querySelector('.rename-cancel').onclick=()=>renameDialog.close();
+renameDialog.querySelector('form').onsubmit=event=>{event.preventDefault();try{appStore.renameFish(selected().id,renameDialog.querySelector('input').value);renameDialog.close();}catch(error){renameDialog.querySelector('.rename-error').textContent=error.message;}};
+const stage=$('#observation');stage.prepend(stage.querySelector('.fish-info'));stage.append($('#collection-panel'));
+$('#open-genome').onclick=()=>$('#genome-dialog').showModal();
+const observationNav=document.createElement('nav');observationNav.className='observation-nav';observationNav.setAttribute('aria-label','Scorri gli esemplari osservati');
+const previousFish=document.createElement('button'),nextFish=document.createElement('button');
+previousFish.id='observation-prev';nextFish.id='observation-next';
+for(const [button,symbol,label] of [[previousFish,'←','Pesce precedente'],[nextFish,'→','Pesce successivo']]){
+  button.type='button';button.className='observation-arrow';button.textContent=symbol;button.setAttribute('aria-label',label);observationNav.append(button);
+}
+$('.hero-fish').append(observationNav);
+function observationIds(){return [...document.querySelectorAll('#roster .fish-card:not([hidden])')].map(card=>Number(card.dataset.fishId));}
+function observationTarget(offset){
+  const ids=observationIds(),index=ids.indexOf(state.selected);
+  return ids.length<2?null:ids[index<0?(offset>0?0:ids.length-1):(index+offset+ids.length)%ids.length];
+}
+function updateObservationNav(){
+  for(const [button,offset,label] of [[previousFish,-1,'Pesce precedente'],[nextFish,1,'Pesce successivo']]){
+    const id=observationTarget(offset),fish=state.fish.find(item=>item.id===id);
+    button.disabled=!fish;button.setAttribute('aria-label',fish?label+': '+fishLabel(fish):label);
+  }
+}
+previousFish.onclick=()=>{const id=observationTarget(-1);if(id!==null)observeFish(id);};
+nextFish.onclick=()=>{const id=observationTarget(1);if(id!==null)observeFish(id);};
+const zoomControl=document.createElement('label');zoomControl.className='roster-zoom';zoomControl.innerHTML='<span>Dimensione schede <output for="roster-zoom-range"></output></span><input id="roster-zoom-range" type="range" min="180" max="520" step="20" value="260" aria-label="Dimensione delle schede e delle anteprime dei pesci">';
+$('#roster').before(zoomControl);
+const zoomRange=zoomControl.querySelector('input'),zoomOutput=zoomControl.querySelector('output');
+function setRosterZoom(value){
+ const size=Math.max(180,Math.min(520,Number(value)||260)),roster=$('#roster');
+ const preview=Math.round(64+(size-180)*206/340);
+ roster.style.setProperty('--fish-card-width',size+'px');
+ roster.style.setProperty('--fish-preview-width',preview+'px');
+ roster.style.setProperty('--fish-preview-height',Math.round(preview*.75)+'px');
+ roster.classList.toggle('zoom-max',size===520);
+ zoomRange.value=size;zoomOutput.value=Math.round((size-180)/340*100)+'%';
+}
+setRosterZoom(localStorage.getItem('fishchromia-roster-zoom'));
+zoomRange.oninput=()=>{setRosterZoom(zoomRange.value);localStorage.setItem('fishchromia-roster-zoom',zoomRange.value);};
 function renderStage() {
   const fish = selected();
   window.betta3d?.setFish(fish);
@@ -61,12 +109,10 @@ function renderStage() {
   $('#fish-number').textContent = '#' + fish.id + ' · ' + (fish.gen ? 'GENERAZIONE ' + fish.gen : 'FONDATORE');
   const dev=BettaTypes.development(fish);
   $('#fish-age').textContent = dev.stage.toUpperCase()+' · '+fish.age+' MESI DI GIOCO';
-  $('#fish-development').textContent=dev.label+' · taglia '+Math.round(dev.size*100)+'% della propria taglia adulta simulata';
-  $('#growth-progress').value=dev.size;
-  $('#growth-note').textContent=fish.age<4?'Corpo, pinne e pigmentazione crescono a ogni mese. Riproduzione da 2 mesi; sviluppo completo a 4 mesi di gioco.':'Sviluppo completo nel modello. Proporzioni illustrative; il sesso non si deduce dai soli colori o dalle pinne.';
-  $('#fish-name').textContent = fish.name;
-  $('#fish-form').textContent = BettaTypes.name(fish);
-  $('#fish-traits').textContent = phenotype(fish);
+  $('#fish-development').textContent=dev.label+' · taglia '+Math.round(dev.size*100)+'%';
+  $('#fish-name').textContent = fishLabel(fish);
+  $('#fish-form').textContent = 'Livrea: '+coatLabel(fish);
+  $('#fish-traits').textContent = 'Colori: '+colorLabel(fish);
   const family=$('#fish-family');family.replaceChildren();
   if(!fish.parents)family.textContent='Fondatore · nessun genitore registrato.';
   else{family.append('Genitori: ');fish.parents.forEach((id,i)=>{if(i)family.append(' × ');const parent=state.fish.find(f=>f.id===id),archived=state.career?.archive.find(f=>f.id===id),name=parent||archived;const label=name?name.name+' (#'+id+')':'#'+id;if(parent){const link=document.createElement('button');link.className='fish-name-link';link.textContent=label;link.onclick=()=>observeFish(id);family.append(link);}else family.append(label);});}
@@ -97,7 +143,7 @@ function renderGenome() {
   const key = BettaAppearance.key(fish);
   if (key === lastGenome) return;
   lastGenome = key;
-  const ornamental = BettaSpecies.ornamental(fish);
+  const ornamental = BettaSpecies.coatEnabled(fish);
   $('#seed-label').textContent = 'SEED ' + fish.seed;
   $('#color-genome-title').textContent = ornamental ? 'FATTORI CROMATICI DEL GIOCO' : 'SPECIE / ORIGINE';
   $('#form-genome-title').hidden = !ornamental;
@@ -126,8 +172,8 @@ function renderParents() {
     detail.textContent = fish ? phenotype(fish) : 'Seleziona un esemplare dalla vasca';
     slot.replaceChildren();
     if(fish){
-      const image=document.createElement('img');image.className='parent-preview';drawPreview(image,fish);const observe=document.createElement('button');observe.className='parent-observe';observe.type='button';observe.setAttribute('aria-label','Osserva '+fish.name+' #'+fish.id);observe.setAttribute('aria-pressed',String(state.selected===fish.id));observe.onclick=()=>{observeFish(fish.id);$(selector+' .parent-observe')?.focus({preventScroll:true});};slot.append(observe);observe.append(image);
-      const name=document.createElement('strong');name.textContent=fish.name;observe.append(name);
+      const image=document.createElement('img');image.className='parent-preview';drawPreview(image,fish);const observe=document.createElement('button');observe.className='parent-observe';observe.type='button';observe.setAttribute('aria-label','Osserva '+fishLabel(fish)+' #'+fish.id);observe.setAttribute('aria-pressed',String(state.selected===fish.id));observe.onclick=()=>{observeFish(fish.id);$(selector+' .parent-observe')?.focus({preventScroll:true});};slot.append(observe);observe.append(image);
+      const name=document.createElement('strong');name.textContent=fishLabel(fish);observe.append(name);
       detail.textContent=BettaTypes.name(fish)+' · #'+fish.id;
     }else{
       const choose=document.createElement('button');choose.className='pick';choose.textContent='Scegli dalla vasca';
@@ -195,6 +241,7 @@ function createCard(fish) {
   const card=document.createElement('div'); card.className='fish-card'; card.dataset.fishId=fish.id;
   const image=document.createElement('img'); image.className='fish-thumbnail';
   const info=document.createElement('div'); info.className='card-info';
+  const coat=document.createElement('div'); coat.className='coat-badge';
   const name=document.createElement('button'),detail=document.createElement('small'),reason=document.createElement('small');reason.className='pair-reason';
   name.className='fish-name-link';name.onclick=()=>observeFish(fish.id);
   info.append(name,detail,reason);
@@ -208,15 +255,20 @@ function createCard(fish) {
     appStore.pick(candidate.id);
     if(innerWidth<=720)$('#breeding-panel').scrollIntoView({block:'start'});
   });
-  const preview=document.createElement('button');preview.className='fish-preview-control';preview.setAttribute('aria-label','Osserva '+fish.name+' #'+fish.id);preview.onclick=()=>observeFish(fish.id);preview.append(image);
+  const preview=document.createElement('button');preview.className='fish-preview-control';preview.setAttribute('aria-label','Osserva '+fishLabel(fish)+' #'+fish.id);preview.onclick=()=>observeFish(fish.id);preview.append(image);
   const move=document.createElement('button');move.className='pick move-fish';move.textContent='Sposta';move.onclick=()=>openMoveFish(fish.id);
-  actions.append(study,pick,move); card.append(preview,info,actions);
-  return {card,image,name,detail,pick,reason};
+  actions.append(study,pick,move); card.append(preview,coat,info,actions);
+  return {card,image,name,detail,coat,pick,reason};
 }
 function renderRoster() {
   const ids=new Set(state.fish.map(f=>f.id));
   for(const [id,item] of rosterCards) if(!ids.has(id)) { item.card.remove(); rosterCards.delete(id); }
   const roster=$('#roster');
+  const coats=[...new Set(state.fish.map(coatLabel))].sort((a,b)=>a.localeCompare(b,'it'));
+  const coatSelect=$('#coat-filter');
+  coatSelect.replaceChildren(new Option('Tutte le livree','all'),...coats.map(coat=>new Option(coat,coat)));
+  if(rosterView.coat!=='all'&&!coats.includes(rosterView.coat))rosterView.coat='all';
+  coatSelect.value=rosterView.coat;
   const query=rosterView.query.trim().toLocaleLowerCase('it');
   const matches=fish=>{
     if(rosterView.brood&&!rosterView.brood.includes(fish.id))return false;
@@ -224,7 +276,7 @@ function renderRoster() {
     const filter=group==='all'||(group==='young'&&fish.age<2)||(group==='adult'&&fish.age>=2)
       ||(['F','M'].includes(group)&&fish.sex===group&&fish.age>=2)
       ||(group==='parents'&&[state.mother,state.father].includes(fish.id));
-    return filter&&(!query||(fish.name+' '+BettaTypes.name(fish)+' #'+fish.id).toLocaleLowerCase('it').includes(query));
+    return filter&&(rosterView.coat==='all'||coatLabel(fish)===rosterView.coat)&&(!query||(fishLabel(fish)+' '+BettaTypes.name(fish)+' #'+fish.id).toLocaleLowerCase('it').includes(query));
   };
   const ordered=[...state.fish].sort((a,b)=>rosterView.sort==='name'?a.name.localeCompare(b.name,'it')||a.id-b.id:rosterView.sort==='age'?a.age-b.age||b.id-a.id:b.id-a.id);
   const count=ordered.filter(matches).length;
@@ -237,8 +289,9 @@ function renderRoster() {
     if(!item) { item=createCard(fish); rosterCards.set(fish.id,item); }
     item.card.hidden=!matches(fish);
     item.card.classList.toggle('active',fish.id===state.selected);
-    item.name.textContent=(fish.sex==='F'?'♀ ':'♂ ')+fish.name;
+    item.name.textContent=(fish.sex==='F'?'♀ ':'♂ ')+fishLabel(fish);
     item.detail.textContent=BettaTypes.development(fish).stage+' · '+fish.age+' mesi · '+BettaTypes.name(fish);
+    item.coat.textContent=coatLabel(fish);
     item.detail.className=fish.age<2?'juvenile':'';
     const chosen=state[fish.sex==='F'?'mother':'father']===fish.id;
     item.pick.textContent=chosen?'✓ Genitore':fish.age<2?'Adulto tra '+(2-fish.age)+' mesi':fish.sex==='F'?'Scegli ♀':'Scegli ♂';
@@ -257,6 +310,7 @@ function renderRoster() {
     if(roster.children[index]!==item.card) roster.insertBefore(item.card,roster.children[index]||null);
     if(!item.card.hidden)drawPreview(item.image,fish);
   });
+  updateObservationNav();
 }
 function renderLog() {
   $('#log').replaceChildren(...state.log.map(text=>{
@@ -285,9 +339,10 @@ function showBrood(ids,name){
 window.bettaApp={observeFish,store:appStore,render,drawPreview,message,showBrood,clearBrood};
 function setRosterFilter(filter,keepBrood=false){
   if(!keepBrood)clearBrood();
-  rosterView.filter=filter;rosterView.query='';$('#fish-filter').value=filter;$('#fish-search').value='';renderRoster();
+  rosterView.filter=filter;rosterView.coat='all';rosterView.query='';$('#fish-filter').value=filter;$('#fish-search').value='';renderRoster();
 }
 $('#fish-search').oninput=event=>{rosterView.query=event.target.value;renderRoster();};
+$('#coat-filter').onchange=event=>{rosterView.coat=event.target.value;renderRoster();};
 $('#fish-filter').onchange=event=>{clearBrood();rosterView.filter=event.target.value;renderRoster();};
 $('#fish-sort').onchange=event=>{rosterView.sort=event.target.value;renderRoster();};
 $('#clear-filters').onclick=()=>setRosterFilter('all');

@@ -96,6 +96,7 @@ window.BettaTypes = (() => {
     "guide": true,
     "genes": {
       "C": "CC",
+      "K": "KK",
       "Y": "YY",
       "X": "XX"
     }
@@ -420,6 +421,17 @@ window.BettaTypes = (() => {
   colors.find(c=>c.id==='steel').name='Steel Blue';
   colors.push({id:'alien-blue',name:'Alien blu',genes:{B:'Bb',K:'KK',I:'II',V:'VV'}});
   for(const id of ['alien-mustard','alien-warrior'])colors.find(c=>c.id===id).genes.V='Vv';
+  // Original Fishchromia coats: imaginative combinations of the same inheritable
+  // game factors, never claims about named real-world strains or molecular genes.
+  colors.push(
+    {id:'aurora-prism',name:'Aurora Prism',fantasy:true,genes:{B:'bb',P:'PP',G:'GG',I:'II',Q:'Qq'}},
+    {id:'abyss-lantern',name:'Abyss Lantern',fantasy:true,genes:{K:'KK',G:'GG',Q:'QQ',X:'XX',I:'II'}},
+    {id:'cinder-halo',name:'Cinder Halo',fantasy:true,genes:{K:'KK',R:'RR',N:'NN',Z:'ZZ',I:'ii'}},
+    {id:'coral-mirage',name:'Coral Mirage',fantasy:true,genes:{R:'RR',T:'Tt',F:'FF',M:'Mm',I:'Ii'}},
+    {id:'lunar-tide',name:'Lunar Tide',fantasy:true,genes:{B:'bb',T:'TT',Z:'ZZ',M:'Mm',I:'II'}},
+    {id:'solar-bloom',name:'Solar Bloom',fantasy:true,genes:{J:'JJ',Y:'YY',N:'NN',C:'Cc',I:'ii'}},
+    {id:'violet-nebula',name:'Violet Nebula',fantasy:true,genes:{B:'BB',P:'PP',M:'MM',Q:'QQ',I:'II'}}
+  );
   colors.sort((a,b)=>a.name.localeCompare(b.name,'it',{sensitivity:'base'}));
   const colorBase={B:'Bb',M:'mm',F:'ff',I:'Ii',K:'kk',R:'rr',C:'cc',O:'oo',Y:'yy',T:'tt',N:'nn',P:'pp',J:'jj',Q:'qq',U:'uu',Z:'zz',X:'xx',G:'gg',V:'vv'};
   const colorLoci=Object.keys(colorBase);
@@ -526,7 +538,7 @@ window.BettaTypes = (() => {
     return result;
   }
   function colorName(fish) {
-    if(window.BettaSpecies&&!window.BettaSpecies.ornamental(fish))return '';
+    if(window.BettaSpecies&&!window.BettaSpecies.coatEnabled(fish))return '';
     const matches=colors.filter(color=>colorLoci.every(k=>(fish.genes?.[k]||colorBase[k])===(color.genes[k]||colorBase[k])));
     return matches.map(color=>color.name).join(' / ');
   }

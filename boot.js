@@ -1,4 +1,10 @@
 'use strict';
+document.addEventListener('click',event=>{
+  const dialog=event.target;
+  if(!(dialog instanceof HTMLDialogElement)||!dialog.open)return;
+  const bounds=dialog.getBoundingClientRect();
+  if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)dialog.close();
+});
 window.bettaLoading = {
   value:0,
   update(value,message){
@@ -26,21 +32,21 @@ function loadScript(src) {
   });
 }
 async function chooseMode(){
-  let saved;try{saved=sessionStorage.getItem('betta-mode');}catch{}
+  let saved;try{saved=sessionStorage.getItem('fishchromia-mode');}catch{}
   if(['career','creative'].includes(saved))return saved;
   const picker=document.getElementById('mode-picker');picker.hidden=false;document.getElementById('loading').hidden=true;
   return new Promise(resolve=>{for(const mode of ['career','creative'])document.getElementById('mode-'+mode).onclick=()=>{
-    try{sessionStorage.setItem('betta-mode',mode);}catch{}
+    try{sessionStorage.setItem('fishchromia-mode',mode);}catch{}
     picker.hidden=true;document.getElementById('loading').hidden=false;resolve(mode);
   };});
 }
 async function chooseCollection(){
- let saved;try{saved=sessionStorage.getItem('fish-collection');}catch{}
+ let saved;try{saved=sessionStorage.getItem('fishchromia-collection');}catch{}
  if(['betta','discus'].includes(saved))return saved;
  const picker=document.createElement('section');picker.id='species-picker';picker.className='mode-picker';picker.innerHTML='<div class="mode-intro"><span class="eyebrow">LA TUA CASA / ALLEVAMENTI</span><h1>Quali pesci<br>vuoi allevare?</h1><p>Betta e Discus hanno stanze e salvataggi indipendenti.</p><button id="species-back" class="secondary">← Cambia modalità</button></div><div class="mode-options"><button id="species-betta"><span>01 / BETTA</span><h2>Pinne e iridescenze.</h2><p>Entra nel tuo allevamento Betta. Tutti i progressi esistenti sono conservati.</p><strong>Entra nei Betta →</strong></button><button id="species-discus"><span>02 / DISCUS</span><h2>Un nuovo mondo, più spazio.</h2><p>Una stanza dedicata, vasche grandi e una nuova collezione di discus.</p><strong>Entra nei Discus →</strong></button></div>';
  document.body.append(picker);document.getElementById('loading').hidden=true;
- document.getElementById('species-back').onclick=()=>{sessionStorage.removeItem('betta-mode');sessionStorage.removeItem('fish-collection');location.reload();};
- return new Promise(resolve=>{for(const kind of ['betta','discus'])document.getElementById('species-'+kind).onclick=()=>{try{sessionStorage.setItem('fish-collection',kind);}catch{}picker.remove();document.getElementById('loading').hidden=false;resolve(kind);};});
+ document.getElementById('species-back').onclick=()=>{sessionStorage.removeItem('fishchromia-mode');sessionStorage.removeItem('fishchromia-collection');location.reload();};
+ return new Promise(resolve=>{for(const kind of ['betta','discus'])document.getElementById('species-'+kind).onclick=()=>{try{sessionStorage.setItem('fishchromia-collection',kind);}catch{}picker.remove();document.getElementById('loading').hidden=false;resolve(kind);};});
 }
 // Choose a separate save before any store is created.
 chooseMode().then(async mode=>{window.bettaMode=mode;window.fishCollection=await chooseCollection();requestAnimationFrame(() => requestAnimationFrame(async () => {

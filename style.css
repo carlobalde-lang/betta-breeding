@@ -81,3 +81,73 @@
 .parent-observe{display:flex;flex-direction:column;align-items:center;width:100%;gap:8px;padding:8px;border:1px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer;border-radius:10px}.parent-observe[aria-pressed="true"]{border-color:var(--gold,#d6b874);background:#d6b8740d}.parent-observe:hover,.parent-observe:focus-visible{outline:2px solid #d6b874;outline-offset:2px}.fish-preview-control{display:block;width:100%;border:0;padding:0;background:transparent;cursor:pointer;border-radius:8px}.fish-preview-control img{display:block;max-width:100%}.fish-preview-control:focus-visible{outline:2px solid #d6b874;outline-offset:2px}.fish-name-link{padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;text-align:left;cursor:pointer}.fish-name-link:hover,.fish-name-link:focus-visible{text-decoration:underline;color:#e5c88e}
 
 #fish-move-target{width:100%;max-width:100%;min-height:44px;background:#142e35;color:#efdfbb;border:1px solid #718e85;border-radius:8px;padding:10px;font:inherit}#fish-move-dialog{width:min(560px,90vw)}.move-error{color:#f0b29b}.card-actions{flex-wrap:wrap}
+
+/* Laboratory: keep the working controls visible and let the collection use the wide column. */
+#laboratory .lab-nav{display:none}
+#laboratory .lab-overview{min-height:0;padding:10px 24px;gap:18px}
+#laboratory .lab-overview h2,#laboratory .lab-overview #next-step{display:none}
+#laboratory .lab-overview .eyebrow{white-space:nowrap;font-size:10px}
+#laboratory .lab-stats{flex-basis:auto;margin:0;gap:20px}
+#laboratory .lab-stats strong{font-size:24px}
+#laboratory .lab-stats span{font-size:10px}
+#laboratory .workspace{grid-template-columns:minmax(250px,280px) minmax(0,1fr)}
+#laboratory .breeding{grid-column:1;grid-row:1}
+#laboratory .stage{grid-column:2;grid-row:1;min-width:0;padding:20px 24px}
+#laboratory .fish-info{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:10px 16px;padding:12px 18px;margin-bottom:18px;border:1px solid #34585b;border-radius:14px;background:linear-gradient(110deg,#17383d,#0e2932)}
+#laboratory .fish-info>div{display:flex;flex:1 1 650px;align-items:center;flex-wrap:wrap;gap:4px 14px;min-width:0;width:auto}
+#laboratory .fish-info .eyebrow{flex-basis:100%;font-size:10px}
+#laboratory .fish-info h2{font-size:clamp(21px,2vw,29px);margin:0;line-height:1.2}
+#laboratory .fish-info .text-button{white-space:nowrap}
+#laboratory .fish-info .fish-form{font-size:14px;margin:0;padding-left:14px;border-left:1px solid #68827c}
+#laboratory .fish-info #fish-traits{font-size:12px;margin:0}
+#laboratory .fish-info .secondary{padding:8px 12px;font-size:12px}
+#laboratory .stage-top{margin:0 0 10px}
+#laboratory .hero-fish{height:clamp(320px,32vw,510px)}
+#laboratory .collection{grid-column:auto;width:100%;margin-top:24px;padding:24px 0 0;border-left:0;border-top:1px solid #345354;background:transparent}
+#laboratory .collection-note{margin:10px 0 14px;max-width:750px}
+#laboratory .roster-tools{max-width:none;display:grid;grid-template-columns:minmax(220px,1fr) auto;align-items:end;gap:12px}
+#laboratory .roster-selects{margin:0;min-width:340px}
+#laboratory .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--fish-card-width,260px)),1fr));gap:12px;max-height:none;overflow:visible;padding:0}
+#laboratory .roster .fish-card[hidden]{display:none}
+#laboratory .roster.zoom-max{grid-template-columns:repeat(2,minmax(0,1fr))}
+#laboratory .fish-card{display:grid;grid-template-columns:var(--fish-preview-width,82px) minmax(0,1fr);align-content:start;gap:10px;min-height:128px;padding:10px}
+#laboratory .fish-card .fish-preview-control{overflow:hidden;background:radial-gradient(circle,#1b4551,#0d2a35)}
+#laboratory .fish-card .fish-preview-control{grid-column:1;grid-row:1 / span 2;align-self:start}
+#laboratory .fish-card .coat-badge{grid-column:2;grid-row:1;justify-self:end;align-self:start;min-width:0;max-width:100%;color:rgb(205,184,136);font-size:clamp(11px,calc(var(--fish-card-width,260px)*.044),22px);font-weight:700;line-height:1.2;text-align:right;overflow-wrap:anywhere}
+#laboratory .fish-card .fish-thumbnail{width:var(--fish-preview-width,82px);height:var(--fish-preview-height,62px);object-fit:contain;background:transparent}
+#laboratory .fish-card .card-info{grid-column:2;grid-row:2;align-self:center}
+#laboratory .fish-card .fish-name-link{font-size:13px;line-height:1.25}
+#laboratory .fish-card .card-actions{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#laboratory .fish-card .pick{font-size:11px;padding:7px 4px;min-width:0}
+#laboratory .roster-zoom{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:12px 0;color:#b9d0c7;font-size:12px}
+#laboratory .roster-zoom span{display:flex;gap:8px;white-space:nowrap}
+#laboratory .roster-zoom output{color:#e2c58f;min-width:32px;text-align:right}
+#laboratory .roster-zoom input{width:180px;accent-color:#e0bf80;cursor:pointer}
+#laboratory .observation-heading{display:flex;align-items:center;flex-wrap:wrap;gap:5px 15px;min-width:0}
+#laboratory .observation-heading .view-note{margin:0;color:#b5ccc3}
+#laboratory #fish-family{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
+#laboratory #fish-family .fish-name-link{font-size:12px}
+#laboratory .genome-trigger{position:absolute;top:16px;right:16px;z-index:3;width:42px;height:42px;border:1px solid #cdb77e;border-radius:12px;background:#102c34dd;color:#f4dfb8;font-size:22px;cursor:pointer}
+#laboratory .genome-trigger:hover{background:#27434a}
+#laboratory .observation-nav{position:absolute;z-index:4;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px}
+#laboratory .observation-arrow{width:42px;height:36px;border:1px solid #b9aa80;border-radius:9px;background:#0b2631df;color:#f2dbad;font-size:22px;line-height:1;cursor:pointer}
+#laboratory .observation-arrow:hover:not(:disabled){background:#31505a}
+#laboratory .observation-arrow:focus-visible{outline:2px solid #f6d296;outline-offset:3px}
+#laboratory .observation-arrow:disabled{opacity:.35;cursor:default}
+@media(max-width:720px){#laboratory .observation-nav{bottom:45px}}
+#genome-dialog{max-width:760px;max-height:min(85vh,760px);overflow:auto}
+#genome-dialog h2{margin:0 35px 20px 0}
+#laboratory .roster-selects{grid-template-columns:repeat(3,minmax(120px,1fr));min-width:480px}
+#laboratory .backup-menu{margin:20px 0 0;padding:15px 0 0;border-top:1px solid #345354}
+@media(max-width:720px){#laboratory .stage-top{align-items:flex-start;gap:10px}#laboratory .observation-heading{display:block}#laboratory .observation-heading .view-note{display:block;margin-top:3px}#laboratory .roster-selects{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}#laboratory .roster-selects label:first-child{grid-column:1/-1}#genome-dialog{padding:20px}}
+@media(max-width:1050px){#laboratory .workspace{display:flex;flex-direction:column}#laboratory .breeding{order:0;border-right:0;border-bottom:1px solid #345354}#laboratory .stage{order:1;width:100%}#laboratory .lab-overview{flex-wrap:wrap}#laboratory .lab-stats{flex-basis:auto}}
+@media(max-width:720px){#laboratory .lab-overview{padding:10px 16px;gap:10px}#laboratory .lab-overview .eyebrow{display:none}#laboratory .lab-stats{width:100%;justify-content:space-between}#laboratory .stage{padding:16px}#laboratory .fish-info{padding:12px;gap:8px;margin-bottom:14px}#laboratory .fish-info>div{gap:6px 10px}#laboratory .fish-info .fish-form{padding-left:0;border-left:0}#laboratory .fish-info #fish-traits{flex-basis:100%}#laboratory .hero-fish{height:310px}#laboratory .collection{padding-top:18px}#laboratory .roster-tools{display:block}#laboratory .roster-selects{min-width:0;margin-top:10px}#laboratory .roster.zoom-max{grid-template-columns:1fr}#laboratory .fish-card{grid-template-columns:min(var(--fish-preview-width,82px),52.5vw) minmax(0,1fr)}#laboratory .fish-card .fish-thumbnail{width:min(var(--fish-preview-width,82px),52.5vw);height:min(var(--fish-preview-height,62px),42vw)}#laboratory .roster-zoom{justify-content:space-between}#laboratory .roster-zoom input{width:min(42vw,180px)}}
+#catalog{width:90vw;max-width:90vw;height:90dvh;max-height:90dvh;overflow:auto}
+#catalog .catalog-back{margin:8px 0 16px}
+#catalog .catalog-bottom{position:sticky;bottom:0;z-index:3;background:#102934;padding:14px 2px 4px}
+#catalog .coat-card small{min-height:28px}
+#catalog .type-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+.catalog-seed{min-width:170px}.catalog-seed-controls{display:flex;gap:6px}.catalog-seed-controls input{min-width:0;width:122px;background:#173943;color:#f1f7ee;border:1px solid #53716e;border-radius:6px;padding:9px 10px;font:inherit}.catalog-seed-controls button{padding:7px 11px}.catalog-seed-controls input:invalid{border-color:#d98374}
+#catalog .type-card .fish-thumbnail{height:clamp(140px,15vw,210px)}
+#notes .color-audit{margin:20px 0 24px}
+@media(max-width:720px){#catalog{padding:18px}#catalog .type-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#catalog .type-card .fish-thumbnail{height:120px}}

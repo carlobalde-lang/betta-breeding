@@ -1,4 +1,4 @@
-MODELLI AMBIENTALI — BETTA LAB
+MODELLI AMBIENTALI — FISHCHROMIA
 Adattamenti: riduzione poligoni e texture, conversione materiali, scala e disposizione.
 Originali conservati in references/assets.
 

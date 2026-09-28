@@ -6,8 +6,10 @@ if(window.FishCollection?.discus){
  document.querySelector('#catalog .eyebrow').textContent='ATLANTE / DISCUS';
  document.querySelector('#catalog h2').textContent='Le livree dei discus.';
  document.querySelector('#catalog h2+p').textContent='Scegli livrea e sesso: creazione, osservazione e incroci funzionano come nell’allevamento Betta.';
- document.querySelector('#catalog .color-audit').hidden=true;
- document.querySelector('#catalog .sources').hidden=true;
+ for(const selector of ['#catalog .color-audit','#catalog .sources']){
+  const element=document.querySelector(selector);
+  if(element)element.hidden=true;
+ }
  document.getElementById('color-model-note').textContent='Sei livree iniziali e combinazioni ereditarie. Ogni figlio riceve alleli da entrambi i genitori: modello creativo semplificato, non una previsione della genetica reale dei discus.';
  const species=document.getElementById('catalog-species');species.replaceChildren(new Option('Discus','splendens'));species.closest('label').hidden=true;
  document.querySelector('.dumbo-option').hidden=true;

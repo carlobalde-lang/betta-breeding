@@ -5,7 +5,7 @@
  const head=node('header'),heading=node('h2','Il tuo allevamento'),close=node('button','Chiudi','secondary');close.onclick=()=>dialog.close();head.append(heading,close);dialog.append(head);
  const notice=node('p','','career-notice');notice.setAttribute('role','status');dialog.append(notice);
  const stats=node('div',undefined,'career-stats'),tabs=node('nav',undefined,'career-tabs'),content=node('div',undefined,'career-content');dialog.append(stats,tabs,content);
- const footer=node('footer'),switchMode=node('button','Cambia modalità / pesci','secondary');switchMode.onclick=()=>{try{sessionStorage.removeItem('betta-mode');sessionStorage.removeItem('fish-collection');}catch{}location.reload();};footer.append(node('p','Carriera e creativa hanno salvataggi separati. Il cambio di modalità conserva i progressi.'),switchMode);dialog.append(footer);document.body.append(dialog);
+ const footer=node('footer'),switchMode=node('button','Cambia modalità / pesci','secondary');switchMode.onclick=()=>{try{sessionStorage.removeItem('fishchromia-mode');sessionStorage.removeItem('fishchromia-collection');}catch{}location.reload();};footer.append(node('p','Carriera e creativa hanno salvataggi separati. Il cambio di modalità conserva i progressi.'),switchMode);dialog.append(footer);document.body.append(dialog);
  const buttons=[];for(const container of [document.querySelector('.room-header'),document.querySelector('.top-right')]){const b=node('button','','room-button career-open');b.onclick=()=>open();container.append(b);buttons.push(b);}
  let tab='shop',goal=null,guideMemo=null,guidePair=null;
  const goalBanner=node('div',undefined,'breeding-goal');goalBanner.id='breeding-goal';goalBanner.hidden=true;document.getElementById('roster').before(goalBanner);
@@ -47,7 +47,7 @@
  function open(which){if(which)tab=which;render();notice.textContent='';if(!dialog.open)dialog.showModal();}
  window.bettaCareerUI={open};
  function button(text,fn){const b=node('button',text,'secondary');b.onclick=fn;return b;}
- function fishCard(f,owned=false){const card=node('article',undefined,'career-card');const img=node('img');img.width=256;img.height=160;drawPreview(img,f);if(owned){const preview=button('Osserva',()=>{dialog.close();window.bettaApp.observeFish(f.id);});preview.className='fish-preview-control';preview.setAttribute('aria-label','Osserva '+f.name+' #'+f.id);preview.replaceChildren(img);card.append(preview);}else card.append(img);card.append(node('h3',f.name+' · #'+f.id),node('p',(f.sex==='F'?'Femmina':'Maschio')+' · '+f.age+' mesi · '+BettaTypes.name(f)));return card;}
+ function fishCard(f,owned=false){const card=node('article',undefined,'career-card');const img=node('img');img.width=256;img.height=160;drawPreview(img,f);if(owned){const preview=button('Osserva',()=>{dialog.close();window.bettaApp.observeFish(f.id);});preview.className='fish-preview-control';preview.setAttribute('aria-label','Osserva '+BettaCareer.displayName(f)+' #'+f.id);preview.replaceChildren(img);card.append(preview);}else card.append(img);card.append(node('h3',BettaCareer.displayName(f)+' · #'+f.id),node('p',(f.sex==='F'?'Femmina':'Maschio')+' · '+f.age+' mesi · '+BettaTypes.name(f)));return card;}
  function render(){
   const s=appStore.getState(),c=s.career,creative=s.mode!=='career';
   refreshGuide(s);
@@ -61,12 +61,12 @@
    content.append(node('h3','Le vetrine · '+c.listings.length+' / '+c.shopSlots),node('p','I clienti visitano il negozio quando passi al mese successivo. Ogni cliente valuta un solo pesce compatibile con i suoi gusti e il budget.'));
    const visit=button('Visita la Stanza 3 · negozio',()=>{dialog.close();window.betta3d?.openShop();});content.append(visit);
    const form=node('div',undefined,'career-sale-form'),select=node('select'),price=node('input'),hint=node('p');select.id='sale-fish';select.setAttribute('aria-label','Pesce da esporre');price.id='sale-price';price.type='number';price.min='1';price.max='1000000';price.step='1';price.setAttribute('aria-label','Prezzo in monete');
-   for(const f of s.fish.filter(f=>f.age>=4&&!c.listings.some(l=>l.fishId===f.id))) {const option=node('option','#'+f.id+' · '+f.name);option.value=f.id;select.append(option);}
+   for(const f of s.fish.filter(f=>f.age>=4&&!c.listings.some(l=>l.fishId===f.id))) {const option=node('option','#'+f.id+' · '+BettaCareer.displayName(f));option.value=f.id;select.append(option);}
    if([...select.options].some(o=>Number(o.value)===s.selected))select.value=s.selected;
    function recommendation(reset){const f=s.fish.find(f=>f.id===Number(select.value));if(!f){hint.textContent='Non ci sono adulti disponibili.';return;}const max=BettaCareer.value(f,s.month);if(reset)price.value=max;hint.textContent='Massimo consigliato: '+max+' monete · '+Math.round(BettaCareer.chance(Number(price.value),max)*100)+'% per cliente interessato con budget sufficiente.';}
    select.onchange=()=>recommendation(true);price.oninput=()=>recommendation(false);recommendation(true);
    form.append(node('label','Esponi un adulto'),select,node('label','Prezzo'),price,button('Sposta in vetrina',()=>action('list',{fishId:Number(select.value),price:Number(price.value)})),hint);content.append(form);
-   const grid=node('div',undefined,'career-grid');for(const l of c.listings){const f=s.fish.find(f=>f.id===l.fishId),card=fishCard(f,true),edit=node('input');edit.type='number';edit.min=1;edit.max=1000000;edit.value=l.price;edit.setAttribute('aria-label','Prezzo di '+f.name);const max=BettaCareer.value(f,s.month);card.append(node('p','Consigliato fino a '+max+' ◈ · probabilità '+Math.round(BettaCareer.chance(l.price,max)*100)+'%'),edit,button('Aggiorna prezzo',()=>action('list',{fishId:f.id,price:Number(edit.value)})),button('Riporta in allevamento',()=>action('withdraw',{fishId:f.id})));grid.append(card);}content.append(grid,node('h3','Ultime visite'));
+   const grid=node('div',undefined,'career-grid');for(const l of c.listings){const f=s.fish.find(f=>f.id===l.fishId),card=fishCard(f,true),edit=node('input');edit.type='number';edit.min=1;edit.max=1000000;edit.value=l.price;edit.setAttribute('aria-label','Prezzo di '+BettaCareer.displayName(f));const max=BettaCareer.value(f,s.month);card.append(node('p','Consigliato fino a '+max+' ◈ · probabilità '+Math.round(BettaCareer.chance(l.price,max)*100)+'%'),edit,button('Aggiorna prezzo',()=>action('list',{fishId:f.id,price:Number(edit.value)})),button('Riporta in allevamento',()=>action('withdraw',{fishId:f.id})));grid.append(card);}content.append(grid,node('h3','Ultime visite'));
    if(!c.visits.length)content.append(node('p','Allestisci le vetrine e passa un mese per accogliere i primi clienti.'));
    for(const v of c.visits)content.append(node('p',v.name+' · budget '+v.budget+' ◈ · '+(v.wanted==='any'?'curioso':BettaCareer.byId(v.wanted)?.name||'collezionista')+' — '+v.message,'customer-visit'));
   }else if(tab==='album'){
@@ -83,7 +83,7 @@
    content.append(node('p','Alleva e consegna un adulto nato nel tuo allevamento. Puoi seguire due ordini alla volta; nuove richieste ogni tre mesi. La consegna trasferisce il pesce al cliente.'));
    for(const o of c.orders){const card=node('article',undefined,'career-card');card.append(node('h3',BettaCareer.byId(o.colorId).name),node('p',o.reward+' monete · scadenza mese '+o.deadline+' · '+({available:'Disponibile',accepted:'Accettato',completed:'Consegnato',expired:'Scaduto'}[o.status])));
     if(o.status==='available')card.append(button('Accetta ordine',()=>action('accept',{orderId:o.id})));
-    if(o.status==='accepted'){const choices=node('select');choices.setAttribute('aria-label','Esemplare da consegnare');for(const f of s.fish.filter(f=>f.age>=4&&f.gen>=1&&BettaCareer.matches(f).includes(o.colorId)&&!c.listings.some(l=>l.fishId===f.id))){const opt=node('option','#'+f.id+' · '+f.name);opt.value=f.id;choices.append(opt);}card.append(choices,button('Consegna',()=>action('deliver',{orderId:o.id,fishId:Number(choices.value)})));if(!choices.options.length)card.append(node('p','Non hai ancora un adulto nato qui con questa livrea.'));}content.append(card);
+    if(o.status==='accepted'){const choices=node('select');choices.setAttribute('aria-label','Esemplare da consegnare');for(const f of s.fish.filter(f=>f.age>=4&&f.gen>=1&&BettaCareer.matches(f).includes(o.colorId)&&!c.listings.some(l=>l.fishId===f.id))){const opt=node('option','#'+f.id+' · '+BettaCareer.displayName(f));opt.value=f.id;choices.append(opt);}card.append(choices,button('Consegna',()=>action('deliver',{orderId:o.id,fishId:Number(choices.value)})));if(!choices.options.length)card.append(node('p','Non hai ancora un adulto nato qui con questa livrea.'));}content.append(card);
    }
   }else{
    content.append(node('h3','Amplia la casa'),node('p','Stanza 1: riproduttori · Stanza 2: crescita · Stanza 3: negozio. Gli ampliamenti aumentano i posti disponibili; le vasche di crescita si organizzano automaticamente per nidiata.'));
@@ -99,6 +99,6 @@
  appStore.subscribe(render);render();
  if(state.mode==='career'){
   document.getElementById('open-catalog').textContent='Acquista riproduttori';document.getElementById('open-catalog').onclick=()=>window.bettaCareerUI.open('market');
-  const sell=button('Esponi nel negozio',()=>window.bettaCareerUI.open('shop'));sell.id='open-sale';document.getElementById('fish-traits').after(sell);
+  const sell=button('Esponi nel negozio',()=>window.bettaCareerUI.open('shop'));sell.id='open-sale';document.querySelector('.fish-info').append(sell);
  }
 })();
