@@ -208,6 +208,24 @@ window.BettaStore = (() => {
         if(Object.values(assignments).filter(k=>k===key).length>=4)throw Error('Acquario pieno: massimo 4 pesci.');
         commit({...state,tankAssignments:{...assignments,[id]:key}});
       },
+      autoArrangeTanks(){
+        const listed=new Set(state.career?.listings.map(l=>l.fishId)||[]);
+        const assignments={},occupancy=new Map(),groups=new Map();
+        const residents=state.fish.filter(f=>!listed.has(f.id)).sort((a,b)=>a.id-b.id);
+        for(const fish of residents){
+          const type=preferredTank(fish);
+          const group=groups.get(type)||[];
+          let key=group.find(tank=>(occupancy.get(tank)||0)<4);
+          if(!key){
+            const preferred=homeKeys.includes(type)&&!occupancy.has(type)?type:null;
+            let index=0;while(!preferred&&occupancy.has('nursery-'+index))index++;
+            key=preferred||'nursery-'+index;group.push(key);groups.set(type,group);
+          }
+          assignments[fish.id]=key;occupancy.set(key,(occupancy.get(key)||0)+1);
+        }
+        commit({...state,tankAssignments:assignments});
+        return groups.size;
+      },
       renameTank(key,text){
         if(!tankKey(key)||typeof text!=='string'||text.length>48)throw Error('Nome acquario non valido (massimo 48 caratteri).');
         const names={...state.tankNames};if(text.trim())names[key]=text.trim();else delete names[key];
@@ -243,11 +261,19 @@ window.BettaStore = (() => {
         if(selectionStatus(state,f).allowed) commit({...state,selected:id,[f.sex==='F'?'mother':'father']:id});
       },
       add(specimen) {
+        return this.addMany([specimen]);
+      },
+      addMany(specimens) {
         if(mode==='career')throw Error('In carriera acquista riproduttori dal mercato.');
-        if(state.fish.length>=3000) throw Error('Vasca piena: esporta una copia prima di iniziare un nuovo allevamento.');
-        const f=window.BettaTypes.normalize({...clone(specimen),id:nextId()});f.name=defaultFishName(f);
-        const next=migrate({...state,fish:[f,...state.fish],nextFishId:f.id+1,selected:f.id,[f.sex==='F'?'mother':'father']:f.id});
-        next.log=[f.name+' aggiunto alla vasca.',...state.log].slice(0,5);commit(next);
+        if(!Array.isArray(specimens)||!specimens.length)throw Error('Seleziona almeno una livrea.');
+        if(state.fish.length+specimens.length>3000)throw Error('Vasca piena: esporta una copia prima di iniziare un nuovo allevamento.');
+        const start=nextId(),created=specimens.map((specimen,index)=>{
+          const fish=window.BettaTypes.normalize({...clone(specimen),id:start+index});
+          fish.name=defaultFishName(fish);return fish;
+        });
+        const first=created[0];
+        const next=migrate({...state,fish:[...created,...state.fish],nextFishId:start+created.length,selected:first.id,[first.sex==='F'?'mother':'father']:first.id});
+        next.log=[created.length===1?first.name+' aggiunto alla vasca.':created.length+' pesci aggiunti alla vasca.',...state.log].slice(0,5);commit(next);
       },
       breed() {
         const [m,d]=parents();
@@ -259,7 +285,7 @@ window.BettaStore = (() => {
           sex:Math.random()<.5?'F':'M',genes:window.BettaTypes.inheritColors(m,d),form:window.BettaTypes.inherit(m,d),
           seed:Math.floor(Math.random()*899999)+100000,phase:Math.random()*6.28,age:0,gen:Math.max(m.gen,d.gen)+1,parents:[m.id,d.id]
         })).map(f=>({...f,name:defaultFishName(f)}));
-        const next={...clone(state),fish:[...batch,...state.fish],nextFishId:start+4,selected:batch[0].id,log:[m.name+' × '+d.name+': quattro piccoli.',...state.log].slice(0,5)};
+        const next={...clone(state),fish:[...batch,...state.fish],nextFishId:start+4,selected:batch[0].id,mother:null,father:null,log:[m.name+' × '+d.name+': quattro piccoli.',...state.log].slice(0,5)};
         if(mode==='career')window.BettaCareer.discover(next,batch);commit(next);
         return true;
       },

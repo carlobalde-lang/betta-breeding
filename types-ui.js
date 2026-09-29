@@ -9,6 +9,7 @@ const isDiscus=!!window.FishCollection?.discus;
 const randomOption=document.createElement('option');randomOption.value='random';randomOption.textContent='Casuale · ogni esemplare';colorSelect.append(randomOption);
 for(const color of BettaTypes.colors){const option=document.createElement('option');option.value=color.id;option.textContent=color.name+(color.fantasy?' · Fantasia':'');colorSelect.append(option)}
 let catalogForm=null,catalogColor=null,catalogRandomColor=BettaTypes.randomColor();
+const selectedColors=new Set();let selectionAnchor=-1;
 let catalogSeed=Math.floor(Math.random()*899999)+100000,seedRefresh,step='forms';
 const seedLabel=document.createElement('label');seedLabel.className='catalog-seed';seedLabel.textContent='Seed del pesce';
 const seedControls=document.createElement('span');seedControls.className='catalog-seed-controls';
@@ -18,6 +19,7 @@ seedControls.append(seedInput,rerollSeed);seedLabel.append(seedControls);
 if(window.bettaMode==='creative')controls.append(seedLabel);
 const back=document.createElement('button');back.type='button';back.className='secondary catalog-back';back.textContent='← Cambia tipologia';back.hidden=true;controls.before(back);
 const title=$('#catalog-title'),intro=title.nextElementSibling,note=$('#color-model-note'),selection=$('#catalog-selection'),add=$('#add-specimen');
+const multiHint=document.createElement('p');multiHint.className='catalog-multi-hint';multiHint.textContent='Clic: una livrea · Maiusc + clic: intervallo · Ctrl + clic: livree separate.';grid.before(multiHint);
 if(!isDiscus){colorSelect.closest('label').remove();$('#catalog-species').closest('label').remove();}
 const speciesChoices=[
  {id:'imbellis',name:'Betta imbellis',description:'Sagoma Imbellis e tutte le livree del gioco.'},
@@ -27,11 +29,26 @@ const catalogChoices=[...BettaTypes.forms,...(isDiscus?[]:speciesChoices)];
 
 function seedIsValid(){return seedInput.value!==''&&Number.isSafeInteger(Number(seedInput.value))&&Number(seedInput.value)>=0&&Number(seedInput.value)<=9999999;}
 function updateSelection(){
- add.disabled=!seedIsValid()||(!isDiscus&&(step!=='colors'||!catalogColor));
+ add.disabled=!seedIsValid()||(!isDiscus&&(step!=='colors'||!selectedColors.size));
  if(isDiscus)return;
  if(step==='forms'){selection.textContent='Scegli una tipologia per continuare.';return;}
  const form=catalogChoices.find(item=>item.id===catalogForm);
- selection.textContent=catalogColor?`${form.name} · ${BettaTypes.colors.find(item=>item.id===catalogColor).name} · ${sexSelect.value==='F'?'Femmina':'Maschio'}`:`${form.name} · scegli una livrea.`;
+ const count=selectedColors.size;
+ selection.textContent=count>1?`${form.name} · ${count} livree selezionate · ${sexSelect.value==='F'?'Femmina':'Maschio'}`:catalogColor?`${form.name} · ${BettaTypes.colors.find(item=>item.id===catalogColor).name} · ${sexSelect.value==='F'?'Femmina':'Maschio'}`:`${form.name} · scegli una livrea.`;
+ add.textContent=count>1?`Aggiungi ${count} pesci alla vasca →`:'Aggiungi alla vasca →';
+}
+function selectColor(colorId,event){
+ const index=BettaTypes.colors.findIndex(color=>color.id===colorId);
+ if(event.shiftKey&&selectionAnchor>=0){
+  if(!event.ctrlKey&&!event.metaKey)selectedColors.clear();
+  for(let i=Math.min(selectionAnchor,index);i<=Math.max(selectionAnchor,index);i++)selectedColors.add(BettaTypes.colors[i].id);
+ }else if(event.ctrlKey||event.metaKey){
+  if(selectedColors.has(colorId))selectedColors.delete(colorId);else selectedColors.add(colorId);
+  selectionAnchor=index;
+ }else{selectedColors.clear();selectedColors.add(colorId);selectionAnchor=index;}
+ catalogColor=selectedColors.size===1?[...selectedColors][0]:null;
+ for(const card of grid.children)card.setAttribute('aria-pressed',String(selectedColors.has(card.dataset.coatId)));
+ updateSelection();
 }
 function previewFish(formId,colorId,sex=sexSelect.value,dumbo=dumboInput.checked){
  const species=speciesChoices.find(item=>item.id===formId);
@@ -55,21 +72,17 @@ function renderCatalog(){
   selection.textContent=`Discus · ${BettaTypes.colors.find(item=>item.id===colorId)?.name||'Livrea casuale'} · ${sexSelect.value==='F'?'Femmina':'Maschio'}`;
   add.disabled=!seedIsValid();return;
  }
- const colorsStep=step==='colors';back.hidden=!colorsStep;controls.hidden=!colorsStep;note.hidden=!colorsStep;
+ const colorsStep=step==='colors';back.hidden=!colorsStep;controls.hidden=!colorsStep;note.hidden=!colorsStep;multiHint.hidden=!colorsStep;
  title.textContent=colorsStep?'02 / Scegli la livrea.':'01 / Scegli la tipologia.';
  intro.textContent=colorsStep?(speciesChoices.some(item=>item.id===catalogForm)?'Imbellis e Hendra possono indossare tutte le livree: interpretazione creativa del gioco. Tocca una scheda per scegliere.':'La forma scelta appare in tutte le livree. Tocca una scheda per scegliere il colore del nuovo pesce.'):'Scegli una forma delle pinne oppure Imbellis o Hendra. Nel passaggio successivo vedrai tutte le livree disponibili.';
  if(!colorsStep){
   for(const form of catalogChoices){
    const fish=previewFish(form.id,speciesChoices.some(item=>item.id===form.id)?'turquoise':'royal','M',false);
-   makeCard(fish,form.name,form.description,'formId',form.id,false,()=>{catalogForm=form.id;catalogColor=null;step='colors';renderCatalog();catalog.scrollTop=0});
+   makeCard(fish,form.name,form.description,'formId',form.id,false,()=>{catalogForm=form.id;catalogColor=null;selectedColors.clear();selectionAnchor=-1;step='colors';renderCatalog();catalog.scrollTop=0});
   }
  }else{
   for(const color of BettaTypes.colors){
-   makeCard(previewFish(catalogForm,color.id),color.name,color.fantasy?'Livrea originale Fishchromia · fantasia':'Livrea ereditabile','coatId',color.id,color.id===catalogColor,()=>{
-    catalogColor=color.id;
-    for(const card of grid.children)card.setAttribute('aria-pressed',String(card.dataset.coatId===catalogColor));
-    updateSelection();
-   });
+   makeCard(previewFish(catalogForm,color.id),color.name,color.fantasy?'Livrea originale Fishchromia · fantasia':'Livrea ereditabile','coatId',color.id,selectedColors.has(color.id),event=>selectColor(color.id,event));
   }
  }
  updateSelection();
@@ -83,16 +96,16 @@ function setCatalogSeed(value,immediate=false){
 }
 seedInput.oninput=()=>setCatalogSeed(seedInput.value===''?NaN:Number(seedInput.value));
 rerollSeed.onclick=()=>{const value=Math.floor(Math.random()*899999)+100000;seedInput.value=String(value);setCatalogSeed(value,true)};
-back.onclick=()=>{step='forms';catalogColor=null;renderCatalog();catalog.scrollTop=0};
+back.onclick=()=>{step='forms';catalogColor=null;selectedColors.clear();selectionAnchor=-1;renderCatalog();catalog.scrollTop=0};
 $('#open-catalog').onclick=()=>{
  clearTimeout(seedRefresh);catalogRandomColor=BettaTypes.randomColor();
- seedInput.value=String(catalogSeed);seedInput.setCustomValidity('');catalogForm=isDiscus?BettaTypes.forms[0].id:null;catalogColor=null;step='forms';
+ seedInput.value=String(catalogSeed);seedInput.setCustomValidity('');catalogForm=isDiscus?BettaTypes.forms[0].id:null;catalogColor=null;selectedColors.clear();selectionAnchor=-1;step='forms';
  catalog.showModal();renderCatalog();catalog.scrollTop=0;
 };
 for(const control of [colorSelect,sexSelect,dumboInput])control.onchange=()=>renderCatalog();
 add.onclick=()=>{
  if(add.disabled)return;
- const colorId=isDiscus?(colorSelect.value==='random'?catalogRandomColor:colorSelect.value):catalogColor;
- const fish=previewFish(catalogForm,colorId);BettaTypes.normalize(fish);
- act(()=>{appStore.add(fish);catalog.close()});
+ const colors=isDiscus?[colorSelect.value==='random'?catalogRandomColor:colorSelect.value]:BettaTypes.colors.filter(color=>selectedColors.has(color.id)).map(color=>color.id);
+ const fish=colors.map((colorId,index)=>{const item=previewFish(catalogForm,colorId);item.seed=(catalogSeed+index)%10000000;return BettaTypes.normalize(item);});
+ act(()=>{appStore.addMany(fish);catalog.close()});
 };
