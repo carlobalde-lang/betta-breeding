@@ -74,6 +74,14 @@ window.FishI18n=(()=>{
     'vuota':'empty','monete':'coins','Anteprima 3D':'3D preview',
     'Modello sperimentale':'Experimental model','Nessun genitore registrato.':'No parents recorded.',
     'Fondatore':'Founder','Genitori':'Parents','Generazione':'Generation'
+    ,'Clic: una livrea · Maiusc + clic: intervallo · Ctrl + clic: livree separate.':'Click: one coat · Shift + click: select a range · Ctrl + click: select separate coats.'
+    ,'Apri a schermo intero':'Open fullscreen','Apri pesce a schermo intero':'Open fish fullscreen','Esci dallo schermo intero':'Exit fullscreen'
+    ,'Sfondo':'Background','Sfondo della vista 3D':'3D view background','Acqua':'Water','Notte':'Night','Chiaro':'Light'
+    ,'Scegli una tipologia per continuare.':'Choose a type to continue.','Seleziona almeno una livrea.':'Select at least one coat.'
+    ,'Aggiungi alla vasca →':'Add to tank →','sesso assegnato dal gioco':'sex assigned by the game'
+    ,'Apri genetica e dettagli dell’esemplare':'Open fish genetics and details','Genetica e dettagli':'Genetics and details'
+    ,'Scorri gli esemplari osservati':'Browse observed fish','Pesce precedente':'Previous fish','Pesce successivo':'Next fish'
+    ,'Ricostruzione 3D del pesce selezionato':'3D reconstruction of the selected fish'
   }));
   for(const [italian,english] of Object.entries({
     'Scegli un acquario per conoscere la coppia e far nascere una nuova nidiata.':'Choose a tank to meet the pair and create a new brood.',
@@ -305,11 +313,17 @@ window.FishI18n=(()=>{
     ['Evidenze genomiche','Genomic evidence']
   ];
   const patterns=[
-    [/\bFONDATORE\b/g,'FOUNDER'],[/\bGENERAZIONE\b/g,'GENERATION'],
+    [/\bFONDATORE\b/g,'FOUNDER'],[/\bFondatore\b/g,'Founder'],[/\bGENERAZIONE\b/g,'GENERATION'],[/\bGenerazione\b/g,'Generation'],[/\bGenitori\b/g,'Parents'],
     [/\bADULTO IN CRESCITA\b/g,'GROWING ADULT'],[/\bADULTO\b/g,'ADULT'],
     [/\bGIOVANE\b/g,'JUVENILE'],[/\bAVANNOTTO\b/g,'FRY'],
     [/\bMESI DI GIOCO\b/g,'GAME MONTHS'],[/\btaglia\b/g,'size'],
     [/\bnessun genitore registrato\b/g,'no parents recorded'],
+    [/\bsesso assegnato dal gioco\b/g,'sex assigned by the game'],
+    [/\b(\d+) livree selezionate\b/g,'$1 selected coats'],[/\bAggiungi (\d+) pesci alla vasca\b/g,'Add $1 fish to the tank'],
+    [/\b(\d+) pesci aggiunti alla vasca\b/g,'$1 fish added to the tank'],
+    [/\bRicostruzione parametrica\b/g,'Parametric reconstruction'],[/\bCorpo, pinne e pigmentazione seguono età, sesso e tratti ereditati\b/g,'Body, fins and pigmentation follow age, sex and inherited traits'],
+    [/\bEtà e sesso modificano la resa illustrativa, con coefficienti non calibrati per questa specie\b/g,'Age and sex affect the illustrative rendering, using coefficients not calibrated for this species'],
+    [/\bPesce precedente:\s*/g,'Previous fish: '],[/\bPesce successivo:\s*/g,'Next fish: '],[/\bRicostruzione 3D:\s*/g,'3D reconstruction: '],
     [/\bCarriera ·/g,'Career ·'],[/\bCreativa ·/g,'Creative ·'],
     [/\bImportazione annullata:\s*/g,'Import canceled: '],
     [/\b(\d+) pesci sono diventati adulti\b/g,'$1 fish became adults'],
