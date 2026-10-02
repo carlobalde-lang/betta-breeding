@@ -32,7 +32,7 @@
   if(!plan.pairs.length){
    panel.append(node('p','Non ho trovato un incrocio diretto per questa livrea tra i profili confrontati.'));
    if(plan.missing.length)panel.append(node('p','Tratti mancanti: '+plan.missing.map(k=>(labels[k]||k).replace(' (sim.)','')).join(', ')+'. Introducili acquistando riproduttori; sbloccare un nome nell’album da solo non cambia i geni.'));
-   for(const donor of plan.donors){const available=BettaCareer.offers(s).some(o=>o.colorId===donor.id);panel.append(node('p','Cerca '+BettaCareer.byId(donor.id).name+' per introdurre '+donor.supplies.map(k=>(labels[k]||k).replace(' (sim.)','')).join(', ')+(available?' · disponibile ora nel mercato.':' · controlla le offerte dei prossimi mesi.')));}
+   for(const donor of plan.donors){const available=BettaCareer.offers(s).some(o=>o.colorId===donor.id);panel.append(node('p','Cerca '+BettaCareer.byId(donor.id).name+' per introdurre '+donor.supplies.map(k=>(labels[k]||k).replace(' (sim.)','')).join(', ')+(available?' · disponibile ora nel mercato.':' · controlla i riproduttori già posseduti.')));}
    if(!plan.missing.length)panel.append(node('p','I caratteri sono presenti ma non ancora combinabili in una sola nidiata. Può servire una nuova generazione o un riproduttore della linea cercata.'));
    if(plan.steps.length){panel.append(node('h3','Nel frattempo puoi sbloccare'),node('p','Livree vicine al tuo obiettivo e ottenibili adesso. Sono suggerimenti di progressione, non prerequisiti obbligatori.'));for(const step of plan.steps)panel.append(button(BettaCareer.byId(step.id).name+' · '+percent(step.pair.probability)+' per piccolo',()=>chooseGoal(step.id)));}
    panel.append(button('Cerca riproduttori nel mercato',()=>{tab='market';render();dialog.scrollTop=0;}));
@@ -48,17 +48,22 @@
  window.bettaCareerUI={open};
  function button(text,fn){const b=node('button',text,'secondary');b.onclick=fn;return b;}
  function fishCard(f,owned=false){const card=node('article',undefined,'career-card');const img=node('img');img.width=256;img.height=160;drawPreview(img,f);if(owned){const preview=button('Osserva',()=>{dialog.close();window.bettaApp.observeFish(f.id);});preview.className='fish-preview-control';preview.setAttribute('aria-label','Osserva '+BettaCareer.displayName(f)+' #'+f.id);preview.replaceChildren(img);card.append(preview);}else card.append(img);card.append(node('h3',BettaCareer.displayName(f)+' · #'+f.id),node('p',(f.sex==='F'?'Femmina':'Maschio')+' · '+f.age+' mesi · '+BettaTypes.name(f)));return card;}
+ let stableContentKey=null;
  function render(){
   const s=appStore.getState(),c=s.career,creative=s.mode!=='career';
   refreshGuide(s);
   for(const b of buttons)b.textContent=creative?'Creativa · modalità':'Carriera · '+c.cash+' ◈';
   if(!dialog.open&&!render.force)return;
-  heading.textContent=creative?'Modalità creativa':'La tua carriera';tabs.hidden=creative;stats.hidden=creative;content.replaceChildren();
-  if(creative){content.append(node('p','Catalogo completo e incroci liberi. Il tuo allevamento originale è conservato qui.'));return;}
+  heading.textContent=creative?'Modalità creativa':'La tua carriera';tabs.hidden=creative;stats.hidden=creative;
+  if(creative){content.replaceChildren(node('p','Catalogo completo e incroci liberi. Il tuo allevamento originale è conservato qui.'));return;}
   stats.replaceChildren(...[c.cash+' monete',c.reputation+' reputazione',s.fish.length+' / '+c.capacity+' pesci',Object.keys(c.discoveries).length+' / '+BettaTypes.colors.length+' livree'].map(v=>node('span',v)));
   for(const b of tabs.children)b.setAttribute('aria-pressed',String(b.dataset.tab===tab));
+  // Customer arrivals update the counters without rebuilding unchanged previews.
+  const key=JSON.stringify([tab,goal,guidePair,s.month,s.fish,c.listings,c.discoveries,c.orders,c.capacity,c.shopSlots,c.expansions]);
+  if((tab==='market'||tab==='album')&&key===stableContentKey)return;
+  stableContentKey=key;content.replaceChildren();
   if(tab==='shop'){
-   content.append(node('h3','Le vetrine · '+c.listings.length+' / '+c.shopSlots),node('p','I clienti visitano il negozio quando passi al mese successivo. Ogni cliente valuta un solo pesce compatibile con i suoi gusti e il budget.'));
+   content.append(node('h3','Le vetrine · '+c.listings.length+' / '+c.shopSlots),node('p','I clienti arrivano a intervalli casuali durante il mese mentre giochi. Ogni cliente valuta un pesce compatibile con i suoi gusti e il budget.'));
    const visit=button('Visita la Stanza 3 · negozio',()=>{dialog.close();window.betta3d?.openShop();});content.append(visit);
    const form=node('div',undefined,'career-sale-form'),select=node('select'),price=node('input'),hint=node('p');select.id='sale-fish';select.setAttribute('aria-label','Pesce da esporre');price.id='sale-price';price.type='number';price.min='1';price.max='1000000';price.step='1';price.setAttribute('aria-label','Prezzo in monete');
    for(const f of s.fish.filter(f=>f.age>=4&&!c.listings.some(l=>l.fishId===f.id))) {const option=node('option','#'+f.id+' · '+BettaCareer.displayName(f));option.value=f.id;select.append(option);}
@@ -67,17 +72,22 @@
    select.onchange=()=>recommendation(true);price.oninput=()=>recommendation(false);recommendation(true);
    form.append(node('label','Esponi un adulto'),select,node('label','Prezzo'),price,button('Sposta in vetrina',()=>action('list',{fishId:Number(select.value),price:Number(price.value)})),hint);content.append(form);
    const grid=node('div',undefined,'career-grid');for(const l of c.listings){const f=s.fish.find(f=>f.id===l.fishId),card=fishCard(f,true),edit=node('input');edit.type='number';edit.min=1;edit.max=1000000;edit.value=l.price;edit.setAttribute('aria-label','Prezzo di '+BettaCareer.displayName(f));const max=BettaCareer.value(f,s.month);card.append(node('p','Consigliato fino a '+max+' ◈ · probabilità '+Math.round(BettaCareer.chance(l.price,max)*100)+'%'),edit,button('Aggiorna prezzo',()=>action('list',{fishId:f.id,price:Number(edit.value)})),button('Riporta in allevamento',()=>action('withdraw',{fishId:f.id})));grid.append(card);}content.append(grid,node('h3','Ultime visite'));
-   if(!c.visits.length)content.append(node('p','Allestisci le vetrine e passa un mese per accogliere i primi clienti.'));
+   if(!c.visits.length)content.append(node('p','Allestisci le vetrine: i primi clienti arriveranno mentre giochi, senza passare un mese.'));
    for(const v of c.visits)content.append(node('p',v.name+' · budget '+v.budget+' ◈ · '+(v.wanted==='any'?'curioso':BettaCareer.byId(v.wanted)?.name||'collezionista')+' — '+v.message,'customer-visit'));
   }else if(tab==='album'){
    renderGuide(s);
+   const reachable=BettaTypes.colors.filter(color=>!c.discoveries[color.id]).map(color=>({color,pair:BettaBreedingGuide.plan(s,color.id,false).pairs.find(p=>p.ready)})).filter(item=>item.pair);
+   content.append(node('h3','Nuove livree ottenibili con i tuoi pesci'));
+   if(!reachable.length)content.append(node('p','Non ci sono nuovi sblocchi diretti con le coppie disponibili: fai crescere i piccoli o introduci una linea dal mercato.'));
+   for(const {color,pair} of reachable)content.append(button(color.name+' · '+(pair.probability*100).toLocaleString('it-IT',{maximumFractionDigits:1})+'% per piccolo',()=>chooseGoal(color.id)));
    content.append(node('p','Le nuove livree si scoprono quando nascono piccoli con quei caratteri visibili. Ogni scoperta vale 100 monete e 2 punti reputazione. Acquistare un riproduttore non sblocca la sua livrea. Caratteri sovrapposti possono registrare più nomi commerciali.'));
    const grid=node('div',undefined,'career-grid');for(const color of BettaTypes.colors){const found=c.discoveries[color.id],card=node('article',undefined,'career-card '+(found?'discovered':'locked'));card.append(node('span',found?'✓ Scoperta':'Da allevare','discovery-badge'),node('h3',color.name));
     const f=BettaTypes.specimen('halfmoon',color.id,'M');f.seed=123456;const image=node('img');drawPreview(image,f);card.append(image);if(found)card.append(node('p',found.starter?'Livrea iniziale':'Mese '+found.month+' · esemplare #'+found.fishId+' · genitori '+(found.parents||[]).map(id=>'#'+id).join(' × ')));
     const hints=Object.keys(color.genes).filter(k=>color.genes[k].includes(k)).map(k=>(labels[k]||k).replace(' (sim.)',''));card.append(node('p','Tratti da riunire: '+(hints.join(', ')||'colorazione di base')+'.'));if(!found){const help=button(goal===color.id?'Obiettivo selezionato':'Guida agli incroci',()=>chooseGoal(color.id));help.dataset.guideColor=color.id;card.append(help);}grid.append(card);
    }content.append(grid);
   }else if(tab==='market'){
-   content.append(node('h3','Riproduttori da altri allevatori'),node('p','Quattro linee comuni sempre disponibili e tre offerte che cambiano ogni mese. Le nuove linee introducono i tratti necessari per scoprire altre livree attraverso le nascite.'));
+   content.append(node('h3','Riproduttori da altri allevatori'),node('p','Scegli una livrea che non possiedi: tutte le linee mancanti sono disponibili. Basta un riproduttore per introdurre nuovi geni negli incroci; acquistarlo non sblocca l’album.'));
+   if(!BettaCareer.offers(s).length)content.append(node('p','Possiedi già tutte le livree disponibili nel mercato.'));
    const grid=node('div',undefined,'career-grid');for(const offer of BettaCareer.offers(s)){const f=BettaTypes.specimen('halfmoon',offer.colorId,'M');f.seed=234567;const card=fishCard(f);card.querySelector('h3').textContent=BettaCareer.byId(offer.colorId).name;card.append(node('strong',offer.price+' monete'));for(const sex of ['F','M'])card.append(button(sex==='F'?'Acquista femmina':'Acquista maschio',()=>action('buy',{offerId:offer.id,sex})));grid.append(card);}content.append(grid);
   }else if(tab==='orders'){
    content.append(node('p','Alleva e consegna un adulto nato nel tuo allevamento. Puoi seguire due ordini alla volta; nuove richieste ogni tre mesi. La consegna trasferisce il pesce al cliente.'));
@@ -97,6 +107,12 @@
  for(const b of buttons)b.onclick=()=>{draw();notice.textContent='';dialog.showModal();};
  window.bettaCareerUI.open=which=>{if(which)tab=which;draw();notice.textContent='';if(!dialog.open)dialog.showModal();};
  appStore.subscribe(render);render();
+ let customerTick=performance.now();
+ setInterval(()=>{
+  const now=performance.now(),seconds=Math.min(5,(now-customerTick)/1000);customerTick=now;
+  if(!document.hidden)appStore.tickCustomers(seconds);
+ },1000);
+ document.addEventListener('visibilitychange',()=>{customerTick=performance.now();});
  if(state.mode==='career'){
   document.getElementById('open-catalog').textContent='Acquista riproduttori';document.getElementById('open-catalog').onclick=()=>window.bettaCareerUI.open('market');
   const sell=button('Esponi nel negozio',()=>window.bettaCareerUI.open('shop'));sell.id='open-sale';document.querySelector('.fish-info').append(sell);

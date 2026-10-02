@@ -62,6 +62,12 @@ function openMoveFish(id){
 moveDialog.querySelector('form').onsubmit=event=>{event.preventDefault();try{const key=$('#fish-move-target').value;if(key==='shop'){const current=appStore.getState(),fish=current.fish.find(f=>f.id===movingId);appStore.career('list',{fishId:movingId,price:BettaCareer.value(fish,current.month)});}else appStore.moveFish(movingId,key);clearBrood();render();moveDialog.close();message(key==='shop'?'Pesce esposto in negozio al prezzo standard.':'Pesce spostato nell’acquario #'+BettaStore.tankNumber(key)+'.');}catch(e){moveDialog.querySelector('.move-error').textContent=e.message;}};
 const moveSelected=document.createElement('button');moveSelected.id='move-selected-fish';moveSelected.className='secondary';moveSelected.textContent='Sposta in un acquario';moveSelected.onclick=()=>openMoveFish(selected().id);$('#export-fish').parentElement.append(moveSelected);
 const renameDialog=document.createElement('dialog');renameDialog.className='shelf-label-editor';renameDialog.innerHTML='<form><h2>Rinomina esemplare</h2><label for="fish-rename-input">Nome</label><input id="fish-rename-input" maxlength="120" required><p class="rename-error" role="status"></p><button type="submit">Salva nome</button><button type="button" class="rename-cancel">Annulla</button></form>';document.body.append(renameDialog);
+const deleteSelected=document.createElement('button');deleteSelected.id='delete-selected-fish';deleteSelected.type='button';deleteSelected.className='secondary';deleteSelected.textContent='Elimina pesce';moveSelected.after(deleteSelected);
+deleteSelected.onclick=()=>{
+  const fish=selected(),english=window.FishI18n?.language==='en';
+  if(!confirm(english?'Delete '+fish.name+' (#'+fish.id+') from the breeding collection? This cannot be undone.':'Eliminare '+fish.name+' (#'+fish.id+') dall’allevamento? Questa azione non può essere annullata.'))return;
+  act(()=>{appStore.removeFish(fish.id);message(english?'Fish deleted.':'Pesce eliminato.');});
+};
 const renameButton=document.createElement('button');renameButton.type='button';renameButton.className='text-button';renameButton.textContent='Modifica nome';renameButton.onclick=()=>{renameDialog.querySelector('input').value=selected().name;renameDialog.querySelector('.rename-error').textContent='';renameDialog.showModal();renameDialog.querySelector('input').select();};$('#fish-name').after(renameButton);
 renameDialog.querySelector('.rename-cancel').onclick=()=>renameDialog.close();
 renameDialog.querySelector('form').onsubmit=event=>{event.preventDefault();try{appStore.renameFish(selected().id,renameDialog.querySelector('input').value);renameDialog.close();}catch(error){renameDialog.querySelector('.rename-error').textContent=error.message;}};
@@ -117,6 +123,8 @@ setRosterZoom(localStorage.getItem('fishchromia-roster-zoom'));
 zoomRange.oninput=()=>{setRosterZoom(zoomRange.value);localStorage.setItem('fishchromia-roster-zoom',zoomRange.value);};
 function renderStage() {
   const fish = selected();
+  deleteSelected.disabled=state.fish.length<=1;
+  deleteSelected.title=deleteSelected.disabled?'Conserva almeno un pesce nell’allevamento.':'';
   window.betta3d?.setFish(fish);
   $('#season').textContent = 'MESE ' + String(state.month).padStart(2,'0');
   $('#count').textContent = state.fish.length + ' ESEMPLARI';

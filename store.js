@@ -200,6 +200,12 @@ window.BettaStore = (() => {
     function nextId() { return state.nextFishId??Math.max(0,...state.fish.map(f=>f.id))+1; }
     return {
       getState: () => clone(state),
+      tickCustomers(seconds){
+        if(mode!=='career'||blocked||!Number.isFinite(seconds)||seconds<=0)return;
+        state.career.customerRemaining=Math.max(0,(state.career.customerRemaining??20)-Math.min(seconds,5));
+        if(state.career.customerRemaining===0)commit(window.BettaCareer.customer(clone(state)));
+        else persist();
+      },
       moveFish(id,key){
         if(!state.fish.some(f=>f.id===id))throw Error('Esemplare non trovato.');
         if(!homeKey(key))throw Error('Scegli un acquario di allevamento o crescita. Le vetrine si gestiscono dal negozio.');
@@ -235,6 +241,24 @@ window.BettaStore = (() => {
         if(typeof text!=='string'||!text.trim()||text.trim().length>120)throw Error('Il nome deve contenere da 1 a 120 caratteri.');
         const fish=state.fish.find(f=>f.id===id);if(!fish)throw Error('Esemplare non trovato.');
         commit({...state,fish:state.fish.map(f=>f.id===id?{...f,name:text.trim()}:f)});
+      },
+      removeFish(id){
+        const fish=state.fish.find(f=>f.id===id);
+        if(!fish)throw Error('Esemplare non trovato.');
+        if(state.fish.length===1)throw Error('Conserva almeno un pesce nell’allevamento.');
+        const next=clone(state),index=next.fish.findIndex(f=>f.id===id);
+        next.fish.splice(index,1);
+        if(next.selected===id)next.selected=next.fish[Math.min(index,next.fish.length-1)].id;
+        if(next.mother===id)next.mother=null;
+        if(next.father===id)next.father=null;
+        delete next.tankAssignments[id];
+        if(next.career){
+          next.career.listings=next.career.listings.filter(l=>l.fishId!==id);
+          next.career.archive.push({id:fish.id,name:fish.name,month:next.month,parents:fish.parents,reason:'eliminazione'});
+          next.career.archive=next.career.archive.slice(-3000);
+        }
+        next.log=[fish.name+' eliminato dall’allevamento.',...next.log].slice(0,5);
+        commit(next);
       },
       career(action,data){const next=window.BettaCareer.transact(clone(state),action,data);commit(next);},
       getStatus: () => ({notice, blocked}),
