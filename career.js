@@ -50,8 +50,8 @@ window.BettaCareer=(()=>{
   if(!c.discoveries||Array.isArray(c.discoveries)||typeof c.discoveries!=='object')throw Error('Album non valido.');
   for(const [id,d] of Object.entries(c.discoveries))if(!byId(id)||!d||!integer(d.month,1,month)||!(d.fishId===null||integer(d.fishId,1,1000000000))||!(d.parents===null||Array.isArray(d.parents)&&d.parents.length===2&&d.parents.every(p=>integer(p,1,1000000000))))throw Error('Scoperta non valida.');
   if(!starters.every(id=>c.discoveries[id]))throw Error('Album iniziale incompleto.');
-  if(!Array.isArray(c.listings)||c.listings.length>c.shopSlots)throw Error('Vetrine non valide.');
-  const seen=new Set();for(const l of c.listings){if(!l||seen.has(l.fishId)||!fish.some(f=>f.id===l.fishId&&f.age>=4)||!integer(l.price,1,1000000)||!integer(l.listedMonth,1,month))throw Error('Annuncio non valido.');seen.add(l.fishId);}
+  if(!Array.isArray(c.listings)||c.listings.length>c.shopSlots*4)throw Error('Vetrine non valide.');
+  const occupancy=new Map();const seen=new Set();for(const l of c.listings){if(!l||seen.has(l.fishId)||!fish.some(f=>f.id===l.fishId&&f.age>=4)||!integer(l.price,1,1000000)||!integer(l.listedMonth,1,month))throw Error('Annuncio non valido.');seen.add(l.fishId);l.tank??=Math.floor((seen.size-1)/4);if(!integer(l.tank,0,c.shopSlots-1))throw Error('Vetrina non valida.');occupancy.set(l.tank,(occupancy.get(l.tank)||0)+1);if(occupancy.get(l.tank)>4)throw Error('Massimo 4 pesci per vetrina.');}
   if(!Array.isArray(c.orders)||c.orders.length>12||new Set(c.orders.map(o=>o.id)).size!==c.orders.length)throw Error('Ordini non validi.');
   for(const o of c.orders)if(!o||typeof o.id!=='string'||o.id.length>60||!byId(o.colorId)||!integer(o.reward,1,100000)||!integer(o.deadline,1,month+12)||!['available','accepted','completed','expired'].includes(o.status))throw Error('Ordine non valido.');
   if(!Array.isArray(c.visits)||c.visits.length>24||!Array.isArray(c.archive)||c.archive.length>3000)throw Error('Storico negozio non valido.');
@@ -83,8 +83,8 @@ window.BettaCareer=(()=>{
    if(state.fish.some(f=>f.age===0&&f.parents?.includes(fish.id)))throw Error('Attendi il prossimo mese: questo genitore ha appena avuto una nidiata.');
    if(!Number.isSafeInteger(data.price)||data.price<1||data.price>1000000)throw Error('Inserisci un prezzo intero fra 1 e 1.000.000.');
    const listing=c.listings.find(l=>l.fishId===fish.id);
-   if(!listing&&c.listings.length>=c.shopSlots)throw Error('Vetrine piene: ritira un pesce o amplia il negozio.');
-   if(listing)listing.price=data.price;else c.listings.push({fishId:fish.id,price:data.price,listedMonth:state.month});
+   if(!listing&&c.listings.length>=c.shopSlots*4)throw Error('Vetrine piene: ritira un pesce o amplia il negozio.');
+   if(listing)listing.price=data.price;else {let tank=0;while(c.listings.filter(l=>l.tank===tank).length>=4)tank++;c.listings.push({fishId:fish.id,price:data.price,listedMonth:state.month,tank});}
    if(state.mother===fish.id)state.mother=null;if(state.father===fish.id)state.father=null;
   }else if(action==='withdraw'){c.listings=c.listings.filter(l=>l.fishId!==Number(data.fishId));
   }else if(action==='buy'){

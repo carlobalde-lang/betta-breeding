@@ -232,6 +232,7 @@ window.FishI18n=(()=>{
     'Entra nei Betta →':'Enter Betta →','Un nuovo mondo, più spazio.':'A new world, more space.',
     'Una stanza dedicata, vasche grandi e una nuova collezione di discus.':'A dedicated room, larger tanks and a new Discus collection.',
     'Entra nei Discus →':'Enter Discus →',
+    'Disponibile prossimamente':'Coming soon',
     'Casuale · ogni esemplare':'Random · each fish','Seed del pesce':'Fish seed','Nuovo seed':'New seed',
     'Genera un nuovo seed':'Generate a new seed','← Cambia tipologia':'← Change type',
     'Scegli una tipologia per continuare.':'Choose a type to continue.',
@@ -320,7 +321,39 @@ window.FishI18n=(()=>{
     ['Studio sperimentale Splendens × Imbellis','Experimental Splendens × Imbellis study'],
     ['Evidenze genomiche','Genomic evidence']
   ];
+  for(const [it,en] of Object.entries({
+    'Completa la coppia, poi prosegui con il primo incrocio.':'Complete your pair, then start the first cross.','Introduci una nuova linea nel tuo allevamento. Acquistare un pesce non sblocca la sua livrea nell’album.':'Introduce a new line to your fishroom. Purchasing a fish does not unlock its coat in the album.',
+    'OBIETTIVO DI ALLEVAMENTO':'BREEDING GOAL','IL TUO PERCORSO':'YOUR BREEDING PATH','Vai alla coppia':'Go to pair','Continua nel mercato':'Continue in the market','Vedi i discendenti':'View offspring','Scegli una nuova livrea':'Choose a new coat',
+    'Livrea scoperta! Scegli il prossimo obiettivo nell’album.':'Coat discovered! Choose your next goal in the album.',
+    'La coppia è pronta. Sceglila e genera una nidiata.':'Your pair is ready. Select it and create a brood.',
+    'I riproduttori sono acquistati. Il primo incrocio prepara la generazione successiva.':'Both breeders are in your fishroom. The first cross prepares the next generation.',
+    'Seleziona i discendenti utili al prossimo incrocio. Maturità a 2 mesi.':'Select useful offspring for the next cross. Breeders mature at 2 months.',
+    'Completa la coppia consigliata nel mercato.':'Complete your recommended pair in the market.',
+    'Introduci i riproduttori mancanti dal mercato.':'Introduce missing breeders from the market.',
+    'Riproduttore acquistato. La coppia consigliata resta qui.':'Breeder purchased. Your recommended pair stays here.',
+    'Vetrina aggiornata.':'Display tank updated.','Pesce riportato in allevamento.':'Fish returned to your fishroom.','Ordine consegnato.':'Order delivered.','Ordine accettato.':'Order accepted.',
+    'Acquista i due riproduttori.':'Purchase both breeders.','Incrociali: il primo incrocio non genera la livrea scelta.':'Breed them: this first cross does not produce your target coat.',
+    'Seleziona i discendenti utili e falli crescere.':'Select useful offspring and let them grow.',
+    'Questa nidiata non contiene il profilo cercato. Puoi ripetere il primo incrocio.':'This brood does not contain the selected profile. You can repeat the first cross.','Ripeti il primo incrocio':'Repeat the first cross','I discendenti utili sono evidenziati nella vasca. Maturità a 2 mesi.':'Useful offspring are highlighted in your tanks. Breeders mature at 2 months.','Fai crescere la nidiata e attendi il prossimo mese per ripetere l’incrocio.':'Grow the brood and wait until next month to repeat the cross.','Da conservare per il prossimo incrocio':'Keep for the next cross','Geni da selezionare e probabilità':'Genes to select and probabilities','Cerca riproduttori':'Search breeders','Cerca una livrea':'Search coats','Stato delle livree':'Coat discovery status','Da scoprire':'Undiscovered','Scoperte':'Discovered','Nessuna livrea corrisponde alla ricerca.':'No coats match your search.',
+    'Tutti gli acquari':'All tanks','Filtra gli acquari del negozio':'Filter shop tanks','Modifica prezzi':'Edit prices','Riporta tutti in allevamento':'Return all to fishroom','Acquario vuoto':'Empty tank',
+    'Questa stanza non contiene pesci da riordinare.':'There are no fish to arrange in this room.',
+    'Linea già presente: cerca il sesso richiesto nel tuo allevamento.':'This line is already owned: find the required sex in your fishroom.',
+    'Monete insufficienti. Vendi un adulto o completa un ordine.':'Not enough coins. Sell an adult or complete an order.',
+    'Allevamento pieno: libera spazio o amplia la casa.':'Your fishroom is full: free up space or expand your house.',
+    'Non ci sono due linee disponibili nel mercato che offrano un percorso verificato in due generazioni senza produrre direttamente questa livrea.':'No two available market lines provide a verified two-generation path without producing this coat directly.'
+  }))translations.set(it,en);
   const patterns=[
+    [/ riproduttori in allevamento$/,' breeders in your fishroom'],[/^Femmina · /,'Female · '],[/^Maschio · /,'Male · '],
+    [/^✓ In allevamento · /,'✓ In your fishroom · '],[/^Pesci in vendita · /,'Fish for sale · '],
+    [/^Coppia alternativa /,'Alternative pair '],[/^✓ Acquisto · /,'✓ Purchase · '],[/^Visita · /,'Visit · '],
+    [/^Incrocia i discendenti selezionati: /,'Breed selected offspring: '],
+    [/^Probabilità di questo profilo nel primo incrocio: /,'Probability of this profile in the first cross: '],
+    [/Potrebbero servire più nidiate per ottenere entrambi i sessi\./g,'You may need several broods to obtain both sexes.'],
+    [/^Profilo da selezionare: /,'Profile to select: '],
+    [/^Discendenti per /,'Offspring for '],
+    [/^Stanza riordinata: /,'Room arranged: '],[/ livree raggruppate, partendo dagli acquari con numero più basso\./,' coats grouped, starting with the lowest tank numbers.'],
+    [/ pesci riportati in allevamento\./,' fish returned to your fishroom.'],
+
     [/\bFONDATORE\b/g,'FOUNDER'],[/\bFondatore\b/g,'Founder'],[/\bGENERAZIONE\b/g,'GENERATION'],[/\bGenerazione\b/g,'Generation'],[/\bGenitori\b/g,'Parents'],
     [/\bADULTO IN CRESCITA\b/g,'GROWING ADULT'],[/\bADULTO\b/g,'ADULT'],
     [/\bGIOVANE\b/g,'JUVENILE'],[/\bAVANNOTTO\b/g,'FRY'],

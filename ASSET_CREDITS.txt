@@ -1,4 +1,13 @@
 MODELLI AMBIENTALI — FISHCHROMIA
+CLIENTI DEL NEGOZIO — Quaternius
+Ultimate Modular Men / Ultimate Modular Women — CC0 1.0 Universal
+https://quaternius.com/packs/ultimatemodularcharacters.html
+https://quaternius.com/packs/ultimatemodularwomen.html
+https://creativecommons.org/publicdomain/zero/1.0/
+Personaggi: Casual 2, Casual Hoodie, Suit (uomini); Casual, Formal, Suit (donne).
+Adattamenti: conversione GLB, rimozione animazioni inutilizzate, materiali e scala.
+Originali e licenze conservati in references/customers e src/customers.
+
 Adattamenti: riduzione poligoni e texture, conversione materiali, scala e disposizione.
 Originali conservati in references/assets.
 

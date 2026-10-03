@@ -24,5 +24,22 @@ window.BettaBreedingGuide=(()=>{
   if(!pairs.length&&intermediates){for(const c of BettaTypes.colors){if(c.id===id||state.career.discoveries[c.id])continue;const next=plan(state,c.id,false);if(next.pairs[0]?.ready)steps.push({id:c.id,pair:next.pairs[0],distance:distance(target(c.id),id)});}steps.sort((a,b)=>a.distance-b.distance||b.pair.probability-a.pair.probability);}
   return {id,pairs:pairs.slice(0,3),missing,donors,steps:steps.slice(0,2),limited:groups.F.size>128||groups.M.size>128};
  }
- return {probability,plan};
+ function marketPair(state,id){
+  const offers=BettaCareer.offers(state).filter(o=>o.colorId!==id),goal=target(id),pairs=[];
+  for(let i=0;i<offers.length;i++)for(let j=i+1;j<offers.length;j++){
+   const a=offers[i],b=offers[j],mother=BettaTypes.specimen('halfmoon',a.colorId,'F'),father=BettaTypes.specimen('halfmoon',b.colorId,'M');
+   if(probability(mother,father,id)>0)continue;
+   const child={...mother,genes:{...mother.genes}};let intermediate=1;
+   for(const k of BettaTypes.colorLoci){
+    const choices=outcomes(mother.genes[k],father.genes[k]),wanted=goal.genes[k];
+    const score=g=>[...g].reduce((n,allele)=>n+(wanted.includes(allele)?0:1),0);
+    choices.sort((a,b)=>score(a)-score(b)||a.localeCompare(b));child.genes[k]=choices[0];intermediate*=choices.filter(g=>g===choices[0]).length/4;
+   }
+   const second=probability(child,child,id);if(!second)continue;
+   pairs.push({mother:a,father:b,intermediateGenes:child.genes,intermediateProbability:intermediate,probability:second,price:a.price+b.price});
+  }
+  pairs.sort((a,b)=>b.probability-a.probability||b.intermediateProbability-a.intermediateProbability||a.price-b.price);
+  return pairs[0]||null;
+ }
+ return {probability,plan,marketPair};
 })();

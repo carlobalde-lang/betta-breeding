@@ -214,23 +214,20 @@ window.BettaStore = (() => {
         if(Object.values(assignments).filter(k=>k===key).length>=4)throw Error('Acquario pieno: massimo 4 pesci.');
         commit({...state,tankAssignments:{...assignments,[id]:key}});
       },
-      autoArrangeTanks(){
-        const listed=new Set(state.career?.listings.map(l=>l.fishId)||[]);
-        const assignments={},occupancy=new Map(),groups=new Map();
-        const residents=state.fish.filter(f=>!listed.has(f.id)).sort((a,b)=>a.id-b.id);
-        for(const fish of residents){
-          const type=preferredTank(fish);
-          const group=groups.get(type)||[];
-          let key=group.find(tank=>(occupancy.get(tank)||0)<4);
-          if(!key){
-            const preferred=homeKeys.includes(type)&&!occupancy.has(type)?type:null;
-            let index=0;while(!preferred&&occupancy.has('nursery-'+index))index++;
-            key=preferred||'nursery-'+index;group.push(key);groups.set(type,group);
-          }
-          assignments[fish.id]=key;occupancy.set(key,(occupancy.get(key)||0)+1);
+      autoArrangeTanks(wing='breeders',page=0){
+        if(!['breeders','nursery','shop'].includes(wing)||!Number.isSafeInteger(page)||page<0)throw Error('Stanza non valida.');
+        const next=clone(state),assignments=assignTanks(state);
+        const keys=wing==='breeders'?homeKeys:Array.from({length:tanksPerRoom},(_,i)=>(wing==='shop'?'shop-':'nursery-')+(page*tanksPerRoom+i)).filter(k=>wing!=='shop'||Number(k.slice(5))<state.career?.shopSlots);
+        const residents=wing==='shop'?state.fish.filter(f=>state.career?.listings.some(l=>l.fishId===f.id&&keys.includes('shop-'+l.tank))):state.fish.filter(f=>keys.includes(assignments[f.id]));
+        const groups=new Map();
+        for(const f of residents.sort((a,b)=>a.id-b.id)){const coat=f.species+':'+window.BettaCareer.signature(f);if(!groups.has(coat))groups.set(coat,[]);groups.get(coat).push(f);}
+        if([...groups.values()].reduce((n,g)=>n+Math.ceil(g.length/4),0)>keys.length)throw Error('Acquari insufficienti per separare le livree in questa stanza.');
+        let index=0;
+        for(const group of groups.values()){
+          for(let i=0;i<group.length;i++){const key=keys[index+Math.floor(i/4)],fish=group[i];if(wing==='shop')next.career.listings.find(l=>l.fishId===fish.id).tank=Number(key.slice(5));else assignments[fish.id]=key;}
+          index+=Math.ceil(group.length/4);
         }
-        commit({...state,tankAssignments:assignments});
-        return groups.size;
+        next.tankAssignments=assignments;commit(next);return groups.size;
       },
       renameTank(key,text){
         if(!tankKey(key)||typeof text!=='string'||text.length>48)throw Error('Nome acquario non valido (massimo 48 caratteri).');
